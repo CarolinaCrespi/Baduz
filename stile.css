@@ -1,0 +1,55 @@
+/* Centra tutto al centro della pagina */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #1a1a1a; /* Background scuro per un look elegante */
+    font-family: 'Poppins', sans-serif; /* Font moderno */
+    flex-direction: column;
+}
+
+/* Contenitore principale per il gioco */
+#game-container {
+    display: flex; /* Allinea gli elementi orizzontalmente */
+    flex-direction: column; /* Orientamento verticale per il contenitore */
+    justify-content: center; /* Centrato rispetto al gioco */
+    align-items: center; /* Centra gli elementi orizzontalmente */
+    width: 80%; /* Usa una percentuale per la larghezza */
+    max-width: 1200px; /* Limita la larghezza massima */
+    text-align: center;
+}
+
+/* Stile per il titolo del gioco */
+#game-title {
+    font-family: 'Roboto', sans-serif; /* Font diverso per il titolo */
+    font-size: 48px;
+    color: #ff6347; /* Colore arancione caldo */
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7); /* Ombra per il titolo */
+    margin-bottom: 20px; /* Distanza tra titolo e box del labirinto */
+}
+
+/* Box che contiene il labirinto e le informazioni */
+
+
+/* Stile per il display del livello e del timer */
+#level-display, #timer-display {
+    font-size: 20px;
+    color: #ffffff; /* Colore bianco per contrastare sullo sfondo scuro */
+    font-family: 'Roboto', sans-serif; /* Font più moderno */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); /* Ombra per dare un tocco elegante */
+    position: absolute; /* Posizionamento assoluto per separare i due */
+    top: 10px; /* Posizione verticale in alto */
+}
+
+/* Posizione specifica per il livello in alto a sinistra */
+#level-display {
+    left: 20px; /* Allinea a sinistra */
+}
+
+/* Posizione specifica per il timer in alto a destra */
+#timer-display {
+    right: 20px; /* Allinea a destra */
+}
+

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Maze Escape</title> <!-- Titolo della pagina -->
+        <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+        <link rel="stylesheet" href="stile.css">
+    </head>
+<body>
+    <div id="game-container">
+        <!-- Aggiungi il titolo del gioco sopra la box del labirinto -->
+        <h1 id="game-title">Maze Escape</h1> 
+
+        <!-- Il canvas creato da Phaser verrà aggiunto automaticamente -->
+        <div id="game-box">
+            <!-- Elemento per il display del livello -->
+            <div id="level-display">Livello: 1</div>
+            <!-- Elemento per il timer -->
+            <div id="timer-display">Timer: 00:00:00</div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
