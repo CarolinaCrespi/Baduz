@@ -179,7 +179,7 @@ function nextLevel() {
         .setOrigin(0.5)
         .setScrollFactor(0);
 
-        currentLevel = 10;
+        currentLevel = 11;
         this.physics.pause();
         ant.body.setVelocity(0);
         return;
