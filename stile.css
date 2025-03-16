@@ -60,3 +60,21 @@ body::after {
     box-shadow: 8px 8px 0px #ff00ff;
 }
 
+/* Stile per il footer */
+footer {
+    text-align: center;
+    font-size: 14px;
+    color: #888;
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    padding: 10px 0;
+    background-color: #222;
+}
+
+footer p {
+    margin: 0;
+}
+
+
