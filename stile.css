@@ -1,8 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
 body {
-    background-color: #111; /* Scuro per effetto retro */
-    color: #0ff; /* Verde acqua neon */
+    background-color: #111; 
+    color: #0ff; 
     font-family: 'Press Start 2P', cursive;
     text-align: center;
     margin: 0;
@@ -12,7 +12,7 @@ body {
 
 h1 {
     font-size: 28px;
-    text-shadow: 4px 4px 0px #ff00ff; /* Effetto ombra pixelata */
+    text-shadow: 4px 4px 0px #ff00ff; 
 }
 
 button {
@@ -32,7 +32,7 @@ button:hover {
     box-shadow: 4px 4px 0px #ff0;
 }
 
-/* Effetto CRT scanlines */
+
 body::after {
     content: "";
     position: absolute;
@@ -60,21 +60,16 @@ body::after {
     box-shadow: 8px 8px 0px #ff00ff;
 }
 
-/* Stile per il footer */
+
 footer {
     text-align: center;
-    font-size: 14px;
+    font-size: 8px; 
     color: #888;
-    position: fixed;
-    left: 0;
+    padding: 10px 0; 
     bottom: 0;
-    width: 100%;
-    padding: 10px 0;
-    background-color: #222;
-}
-
-footer p {
-    margin: 0;
 }
 
 
+#game-container {
+    padding-bottom: 20px; 
+}
