@@ -173,7 +173,7 @@ function nextLevel() {
 
     currentLevel++;
 
-    if (currentLevel > 5) {
+    if (currentLevel > 7) {
         isGameOver = true;
         this.cameras.main.stopFollow();
         this.cameras.main.centerOn(game.config.width/2, game.config.height/2);
@@ -294,7 +294,7 @@ if (row === exit.y && col === exit.x) {
     const exitText = currentLevel === 10 ? 'FINE' : 'EXIT'; // Cambia testo per livello 10
     this.add.text(x + 5, y + 5, exitText, {
         fontSize: '13px',
-        fill: currentLevel === 5? '#ff9900' : '#ff0000', // Colore diverso per FINE
+        fill: currentLevel === 7? '#ff9900' : '#ff0000', // Colore diverso per FINE
         fontFamily: 'Arial',
         stroke: '#000',
         strokeThickness: 2
