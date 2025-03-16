@@ -157,16 +157,148 @@ function update() {
 /*
   Funzione nextLevel: passa al livello successivo e riavvia la scena.
 */
+// Aggiungi una variabile globale per controllare lo stato del gioco
+let isGameOver = false;
+
+// Aggiungi una variabile globale per il tempo totale
+let totalTime = 0;
+
+// Modifica la funzione nextLevel
 function nextLevel() {
+    // Calcola il tempo del livello corrente e aggiungilo al totale
+    if (timerStarted) {
+        const levelTime = Date.now() - startTime;
+        totalTime += levelTime;
+    }
+
     currentLevel++;
 
-    // Resetta il timer prima di riavviare la scena
+    if (currentLevel > 5) {
+        isGameOver = true;
+        this.cameras.main.stopFollow();
+        this.cameras.main.centerOn(game.config.width/2, game.config.height/2);
+        
+        // Converti il tempo totale in formato leggibile
+        const totalSeconds = Math.floor(totalTime / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const formattedTotal = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        const demoEndText = this.add.text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY,
+            'DEMO COMPLETED!\nThank you for playing!',
+            { 
+                fontSize: '40px', 
+                fill: '#ffffff', 
+                fontFamily: 'Arial',
+                backgroundColor: '#000000',
+                padding: { x: 20, y: 15 },
+                align: 'center'
+            }
+        )
+        .setOrigin(0.5)
+        .setDepth(1000)
+        .setScrollFactor(0);
+
+        this.add.text(
+            this.cameras.main.centerX,
+            this.cameras.main.centerY + 70,
+            `Total Time: ${formattedTotal}`,
+            {
+                fontSize: '24px',
+                fill: '#00ff00',
+                fontFamily: 'Arial',
+                stroke: '#000',
+                strokeThickness: 2
+            }
+        )
+        .setOrigin(0.5)
+        .setScrollFactor(0);
+
+        currentLevel = 10;
+        this.physics.pause();
+        ant.body.setVelocity(0);
+        return;
+    }
+
+    // Reset per il nuovo livello
+    isGameOver = false;
     timerStarted = false;
     startTime = 0;
     document.getElementById('timer-display').textContent = 'Timer: 00:00:00';
-
-    // Riavvia la scena
     this.scene.restart();
+}
+
+// Modifica la funzione update per mostrare solo il timer del livello corrente
+function update() {
+    if (isGameOver) return;
+    
+    ant.body.setVelocity(0);
+    if (cursors.left.isDown) ant.body.setVelocityX(-200);
+    if (cursors.right.isDown) ant.body.setVelocityX(200);
+    if (cursors.up.isDown) ant.body.setVelocityY(-200);
+    if (cursors.down.isDown) ant.body.setVelocityY(200);
+
+    if (!timerStarted) {
+        if (Math.abs(ant.x - antStartPos.x) > 4 || Math.abs(ant.y - antStartPos.y) > 4) {
+            startTime = Date.now();
+            timerStarted = true;
+        }
+    }
+
+    // Mostra solo il timer del livello corrente
+    if (timerStarted) {
+        const elapsedMilliseconds = Date.now() - startTime;
+        const totalSeconds = Math.floor(elapsedMilliseconds / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        document.getElementById('timer-display').textContent = `Livello ${currentLevel}: ${formattedTime}`;
+    }
+}
+
+// Modifica la funzione update per fermare il timer
+function update() {
+    if (isGameOver) return; // Blocca ogni movimento e aggiornamento
+    
+    ant.body.setVelocity(0);
+    if (cursors.left.isDown) ant.body.setVelocityX(-200);
+    if (cursors.right.isDown) ant.body.setVelocityX(200);
+    if (cursors.up.isDown) ant.body.setVelocityY(-200);
+    if (cursors.down.isDown) ant.body.setVelocityY(200);
+
+    if (!timerStarted) {
+        if (Math.abs(ant.x - antStartPos.x) > 4 || Math.abs(ant.y - antStartPos.y) > 4) {
+            startTime = Date.now();
+            timerStarted = true;
+        }
+    }
+
+    // Il resto del codice del timer rimane invariato
+    if (timerStarted) {
+        const elapsedMilliseconds = Date.now() - startTime;
+        const totalSeconds = Math.floor(elapsedMilliseconds / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        document.getElementById('timer-display').textContent = `Timer: ${formattedTime}`;
+    }
+}
+
+// Modifica nel loop di creazione del labirinto (funzione create)
+if (row === exit.y && col === exit.x) {
+    const exitText = currentLevel === 10 ? 'FINE' : 'EXIT'; // Cambia testo per livello 10
+    this.add.text(x + 5, y + 5, exitText, {
+        fontSize: '13px',
+        fill: currentLevel === 5? '#ff9900' : '#ff0000', // Colore diverso per FINE
+        fontFamily: 'Arial',
+        stroke: '#000',
+        strokeThickness: 2
+    });
 }
 
 /* ============================================================
