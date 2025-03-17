@@ -38,7 +38,7 @@ function create() {
     let startPos = { x: 0, y: 0 };
     let exitPos = { x: 0, y: 0 };
 
-    document.getElementById('level-display').textContent = `Livello: ${currentLevel}`;
+    document.getElementById('level-display').textContent = `Level: ${currentLevel}`;
 
     for (let row = 0; row < size; row++) {
         for (let col = 0; col < size; col++) {
