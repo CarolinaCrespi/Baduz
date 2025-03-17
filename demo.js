@@ -10,7 +10,7 @@ const config = {
             debug: false
         } 
     },
-    scene: { preload, create, update }
+    scene: { create, update }
 };
 
 const game = new Phaser.Game(config);
@@ -23,10 +23,6 @@ let startTime = 0;
 let timerStarted = false; 
 let antStartPos = { x: 0, y: 0 }; 
 
-
-function preload() {
-    this.load.image('wall', 'https://upload.wikimedia.org/wikipedia/commons/5/50/Black_colour.jpg');
-}
 
 function create() {
     const mazeData = generateMaze(currentLevel);
@@ -49,8 +45,14 @@ function create() {
             const x = col * tileSize;
             const y = row * tileSize;
             if (mazeLayout[row][col] === 0) {
-                const wall = this.add.image(x + tileSize / 2, y + tileSize / 2, 'wall');
-                wall.setDisplaySize(tileSize, tileSize);
+                const wall = this.add.rectangle(
+                    x + tileSize / 2, 
+                    y + tileSize / 2, 
+                    tileSize, 
+                    tileSize, 
+                    0x000000
+                );
+                wall.setStrokeStyle(2, 0x00FFFF); 
                 this.physics.add.existing(wall, true);
                 topWalls.add(wall);
             } else {
@@ -79,7 +81,7 @@ function create() {
     }
 
     if (ant) ant.destroy();
-    ant = this.add.circle(startPos.x, startPos.y, 10, 0xff0000);
+    ant = this.add.circle(startPos.x, startPos.y, 10, 0xff00ff);
     this.physics.add.existing(ant, false);
     ant.body.setCircle(10);
     ant.body.setCollideWorldBounds(true);
