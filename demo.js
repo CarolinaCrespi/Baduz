@@ -1,7 +1,8 @@
 const config = {
-    type: Phaser.AUTO,
+    type: Phaser.CANVAS,
     width: 800,
     height: 600,
+    canvas: document.getElementById('gameCanvas'),
     backgroundColor: '#999999',
     physics: { 
         default: 'arcade', 
@@ -13,6 +14,7 @@ const config = {
     scene: { create, update }
 };
 
+
 const game = new Phaser.Game(config);
 
 let ant, cursors, topWalls, currentLevel = 1;
@@ -22,6 +24,7 @@ let entrance, exit;
 let startTime = 0;     
 let timerStarted = false; 
 let antStartPos = { x: 0, y: 0 }; 
+
 
 
 function create() {
@@ -38,7 +41,9 @@ function create() {
     let startPos = { x: 0, y: 0 };
     let exitPos = { x: 0, y: 0 };
 
-    document.getElementById('level-display').textContent = `Level: ${currentLevel}`;
+    // document.getElementById("levelDisplay").textContent = "1";
+    document.getElementById('levelDisplay').textContent = ` ${currentLevel}`;
+
 
     for (let row = 0; row < size; row++) {
         for (let col = 0; col < size; col++) {
@@ -124,7 +129,7 @@ function update() {
         const seconds = totalSeconds % 60;
 
         const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        document.getElementById('timer-display').textContent = `Timer: ${formattedTime}`;
+        document.getElementById('timer-display').textContent = ` ${formattedTime}`;
     }
 }
 
@@ -190,7 +195,7 @@ function nextLevel() {
     isGameOver = false;
     timerStarted = false;
     startTime = 0;
-    document.getElementById('timer-display').textContent = 'Timer: 00:00:00';
+    document.getElementById('timer-display').textContent = '00:00:00';
     this.scene.restart();
 }
 
@@ -244,13 +249,13 @@ function update() {
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;
         const formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        document.getElementById('timer-display').textContent = `Timer: ${formattedTime}`;
+        document.getElementById('timer-display').textContent = `${formattedTime}`;
     }
 }
 
-if (row === exit.y && col === exit.x) {
-    const exitText = currentLevel === 10 ? 'FINE' : 'EXIT'; 
-    this.add.text(x + 5, y + 5, exitText, {
+    if (row === exit.y && col === exit.x) {
+         const exitText = currentLevel === 10 ? 'FINE' : 'EXIT'; 
+        this.add.text(x + 5, y + 5, exitText, {
         fontSize: '13px',
         fill: currentLevel === 10? '#ff9900' : '#ff0000', 
         fontFamily: 'Arial',
