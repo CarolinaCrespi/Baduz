@@ -241,13 +241,6 @@
             </div>
             <canvas id="gameCanvas" width="800" height="600"></canvas>
         </div>
-
-        <div class="pause-menu">
-            <h2>PAUSED</h2>
-            <button class="menu-button">RESUME</button>
-            <button class="menu-button">RESTART</button>
-            <button class="menu-button">EXIT</button>
-        </div>
     </div>
 
     <div class="copyright">
@@ -262,7 +255,6 @@
         if (urlParams.has('demo')) {
             document.body.classList.add('demo-mode');
             
-            // Regola le dimensioni della canvas
             const canvas = document.getElementById('gameCanvas');
             canvas.width = window.innerWidth * 0.95;
             canvas.height = window.innerHeight * 0.85;
