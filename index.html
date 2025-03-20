@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BADUZ</title>
+    <title>BADUZ - Neon Maze Escape</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         * {
@@ -20,7 +20,6 @@
             position: relative;
         }
 
-        /* Effetto CRT */
         body::after {
             content: "";
             position: fixed;
@@ -41,7 +40,7 @@
 
         .game-title {
             text-align: center;
-            font-size: 50px;
+            font-size: 70px;
             color: #0ff;
             text-shadow: 0 0 30px #f0f, 0 0 20px #f0f, 0 0 30px #f0f;
             margin-top: 20px;
@@ -51,7 +50,7 @@
 
         .game-description {
             text-align: center;
-            font-size: 15px;
+            font-size: 30px;
             color: #0ff;
             margin-top: 10px;
             margin-bottom: 20px;
@@ -59,12 +58,12 @@
         }
 
         .game-container {
-            display: flex;
+            display: none; /* Nascosto di default */
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
-            flex-direction: column; /* Organizza tutto in colonna */
+            flex-direction: column;
         }
 
         .game-wrapper {
@@ -123,7 +122,6 @@
             transform: scale(1.05);
         }
 
-        /* Pause menu overlay */
         .pause-menu {
             display: none;
             position: fixed;
@@ -144,7 +142,6 @@
             text-shadow: 0 0 10px #0ff;
         }
 
-        /* Animazioni */
         @keyframes neonPulse {
             0% { opacity: 0.8; }
             50% { opacity: 1; }
@@ -165,6 +162,51 @@
             width: 100%;
             text-shadow: 0 0 5px #0ff;
         }
+
+        /* Stili per il pulsante PLAY */
+        .play-button-container {
+            text-align: center;
+            margin: 50px 0;
+        }
+
+        .play-button {
+            padding: 15px 30px;
+            background: #0f0;
+            border: 2px solid #0f0;
+            color: #000;
+            font-family: 'Press Start 2P', cursive;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px #0f0;
+            text-transform: uppercase;
+            font-size: 24px;
+        }
+
+        .play-button:hover {
+            background: #000;
+            color: #0f0;
+            transform: scale(1.05);
+        }
+
+        /* Stili per la modalità demo */
+        .demo-mode .game-title,
+        .demo-mode .game-description,
+        .demo-mode .copyright,
+        .demo-mode .play-button-container {
+            display: none;
+        }
+
+        .demo-mode .game-container {
+            display: flex;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .demo-mode .game-wrapper {
+            border: none;
+            box-shadow: none;
+            padding: 0;
+        }
     </style>
 </head>
 <body>
@@ -175,6 +217,10 @@
         How fast can you break free?
     </div>
     
+    <div class="play-button-container">
+        <button class="play-button" onclick="window.open(location.href + '?demo=true', '_blank')">PLAY</button>
+    </div>
+
     <div class="game-container">
         <div class="game-wrapper">
             <div class="info-panel">
@@ -192,9 +238,7 @@
                 </div>                                
             </div>
             <canvas id="gameCanvas" width="800" height="600"></canvas>
-            
         </div>
-        
 
         <div class="pause-menu">
             <h2>PAUSED</h2>
@@ -209,6 +253,23 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+    <script src="demo.js"></script>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('demo')) {
+            document.body.classList.add('demo-mode');
+            
+            // Regola le dimensioni della canvas
+            const canvas = document.getElementById('gameCanvas');
+            canvas.width = window.innerWidth * 0.95;
+            canvas.height = window.innerHeight * 0.85;
+            
+            if(typeof initGame === 'function') initGame();
+        }
+    </script>
+</body>
+</html>
     <script src="demo.js"></script>
 </body>
 </html>
