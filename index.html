@@ -102,68 +102,6 @@
             text-shadow: 0 0 10px #0ff;
         }
 
-        .menu-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            background: #0f0;
-            border: 2px solid #0f0;
-            color: #000;
-            font-family: 'Press Start 2P', cursive;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 0 10px #0f0;
-        }
-
-        .menu-button:hover {
-            background: #000;
-            color: #0f0;
-            transform: scale(1.05);
-        }
-
-        .pause-menu {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            border: 3px solid #f0f;
-            padding: 30px;
-            text-align: center;
-            box-shadow: 0 0 30px #f0f;
-            z-index: 1000;
-        }
-
-        .pause-menu h2 {
-            color: #0ff;
-            margin-bottom: 20px;
-            text-shadow: 0 0 10px #0ff;
-        }
-
-        @keyframes neonPulse {
-            0% { opacity: 0.8; }
-            50% { opacity: 1; }
-            100% { opacity: 0.8; }
-        }
-
-        .pixelated {
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-        }
-
-        .copyright {
-            text-align: center;
-            font-size: 10px;
-            color: #0ff;
-            position: relative;
-            bottom: 5px;
-            width: 100%;
-            text-shadow: 0 0 5px #0ff;
-        }
-
-        /* Stili per il pulsante PLAY */
         .play-button-container {
             text-align: center;
             margin: 50px 0;
@@ -188,11 +126,34 @@
             transform: scale(1.05);
         }
 
+        .how-to-play {
+            text-align: center;
+            font-size: 18px;
+            color: #0ff;
+            margin-top: 20px;
+            padding: 15px;
+            border: 2px solid #0ff;
+            box-shadow: 0 0 10px #0ff;
+            width: 60%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .how-to-play h2 {
+            font-size: 24px;
+            text-shadow: 0 0 10px #0ff;
+            margin-bottom: 10px;
+        }
+
+        .how-to-play p {
+            margin: 5px 0;
+        }
+
         /* Stili per la modalità demo */
         .demo-mode .game-title,
         .demo-mode .game-description,
-        .demo-mode .copyright,
-        .demo-mode .play-button-container {
+        .demo-mode .play-button-container,
+        .demo-mode .how-to-play {
             display: none;
         }
 
@@ -207,15 +168,31 @@
             box-shadow: none;
             padding: 0;
         }
+
+        .copyright {
+            text-align: center;
+            font-size: 10px;
+            color: #0ff;
+            position: relative;
+            bottom: 6px;
+            width: 100%;
+            text-shadow: 0 0 5px #0ff;
+        }
+
     </style>
 </head>
 <body>
     <div class="game-title">BADUZ</div>
     <div class="game-description">
-        Baduz is a glowing sphere determined to escape from complex mazes.<br>
-        Use the arrow keys to guide it through the labyrinth, avoiding dead ends.<br>
+        Baduz is a glowing sphere determined to escape from complex mazes.<br><br>
         How fast can you break free?
-        <br><br>
+    </div>
+
+    <div class="how-to-play">
+        <h2>HOW TO PLAY</h2>
+        <p>Use the <strong>arrow keys</strong> to move Baduz through the maze.</p>
+        <p>Press <strong>P</strong> to pause the game and press <strong>P</strong> again to resume.</p>
+        <br>
         <span style="color: #ff0000; text-shadow: 0 0 5px #ff0000; font-size: 12px;">DESKTOP VERSION ONLY</span>
     </div>
     
@@ -237,7 +214,7 @@
                 <div class="info-box">
                     <span>SCORE</span>
                     <div id="score">00000</div>
-                </div>                                
+                </div>                                 
             </div>
             <canvas id="gameCanvas" width="800" height="600"></canvas>
         </div>
@@ -254,16 +231,10 @@
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('demo')) {
             document.body.classList.add('demo-mode');
-            
-            const canvas = document.getElementById('gameCanvas');
-            canvas.width = window.innerWidth * 0.95;
-            canvas.height = window.innerHeight * 0.85;
-            
-            if(typeof initGame === 'function') initGame();
+            document.getElementById('gameCanvas').width = window.innerWidth * 0.95;
+            document.getElementById('gameCanvas').height = window.innerHeight * 0.85;
+            if (typeof initGame === 'function') initGame();
         }
     </script>
-</body>
-</html>
-    <script src="demo.js"></script>
 </body>
 </html>
