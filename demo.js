@@ -129,40 +129,45 @@ class MazeScene extends Phaser.Scene {
   
     togglePause() {
         if (!this.paused) {
-          this.paused = true;
-          this.pauseStart = Date.now();
-          this.physics.pause();
+            this.paused = true;
+            this.pauseStart = Date.now();
+            this.physics.pause();
+    
+            if (this.pauseText) {
+                this.pauseText.destroy();
+            }
+    
+            this.pauseText = this.add.text(
+                this.cameras.main.width / 2,  
+                this.cameras.main.height / 2, 
+                "PAUSE",
+                {
+                    fontSize: '100px',
+                    fill: '#00feff',
+                    fontFamily: 'Arial',
+                }
+            )
+            .setOrigin(0.5)
+            .setScrollFactor(0)  
+            .setDepth(9999);     
+    
+        } else {
+            this.paused = false;
+            const pausedDuration = Date.now() - this.pauseStart;
+            if (this.timerStarted) {
+                this.startTime += pausedDuration;
+            }
+            this.physics.resume();
+    
+            // Distruggi il testo PAUSE
+            if (this.pauseText) {
+                this.pauseText.destroy();
+            }
+        }
+    }
+      
       
 
-          if (this.pauseText) {
-            this.pauseText.destroy();  
-          }
-      
-          this.pauseText = this.add.text(
-            this.cameras.main.centerX,  
-            this.cameras.main.centerY,  
-            "PAUSE",                   
-            {
-              fontSize: '100px',
-              fill: '#00feff',
-              fontFamily: 'Arial',
-            }
-          ).setOrigin(1.4);  
-        } else {
-          this.paused = false;
-          const pausedDuration = Date.now() - this.pauseStart;
-          if (this.timerStarted) {
-            this.startTime += pausedDuration;
-          }
-          this.physics.resume();
-      
-          if (this.pauseText) {
-            this.pauseText.destroy();
-          }
-        }
-      }
-      
-  
     formatTime(elapsedMilliseconds) {
       const totalSeconds = Math.floor(elapsedMilliseconds / 1000);
       const hours = Math.floor(totalSeconds / 3600);
