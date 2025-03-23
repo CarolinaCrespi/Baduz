@@ -147,7 +147,7 @@ class MazeScene extends Phaser.Scene {
               fill: '#00feff',
               fontFamily: 'Arial',
             }
-          ).setOrigin(1.5);  
+          ).setOrigin(1.4);  
         } else {
           this.paused = false;
           const pausedDuration = Date.now() - this.pauseStart;
