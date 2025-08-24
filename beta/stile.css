@@ -277,3 +277,14 @@ body::after{
   text-align:center; font-size:10px; color:#0ff;
   position:relative; bottom:6px; width:100%; text-shadow:0 0 5px #0ff;
 }
+
+/* ---- Mostra HUD + joystick quando il device è touch ---- */
+.touch-mode .joystick{ display:grid; }
+.touch-mode .mobile-hud{ display:block; }
+
+/* ---- Permetti lo scroll verticale della pagina ---- */
+html, body { height:auto; overflow-y:auto; }
+
+/* ---- Evita che il joystick fissi blocchi lo scroll del resto ---- */
+#joystick { touch-action: none; }       /* il joystick cattura il drag */
+#gameCanvas { touch-action: pan-y; }    /* sul canvas puoi comunque scrollare in verticale se serve */
