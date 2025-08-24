@@ -77,11 +77,11 @@
           </div>
         </div>
 
-        <!-- CENTER: Canvas + compact mobile HUD -->
+        <!-- CENTRO: Canvas + HUD mobile + Joystick -->
         <div class="stage-center">
           <canvas id="gameCanvas" width="1000" height="700"></canvas>
-
-          <!-- Mobile HUD (mostrala via CSS quando serve) -->
+        
+          <!-- HUD compatta per mobile -->
           <div id="mobileHud" class="mobile-hud" aria-hidden="true">
             <div class="mobile-row">
               <div class="chip"><span>Player</span><strong id="mPlayer">Guest</strong></div>
@@ -96,7 +96,17 @@
               <button id="btnResetM" class="pill danger">Reset</button>
             </div>
           </div>
+        
+          <!-- Joystick virtuale (UNICO) -->
+          <div id="joystick" class="joystick" aria-hidden="true">
+            <button class="pad btn-up"    data-dir="up"    aria-label="Up"></button>
+            <button class="pad btn-left"  data-dir="left"  aria-label="Left"></button>
+            <div    class="pad center"    aria-hidden="true"></div>
+            <button class="pad btn-right" data-dir="right" aria-label="Right"></button>
+            <button class="pad btn-down"  data-dir="down"  aria-label="Down"></button>
+          </div>
         </div>
+
 
         <!-- RIGHT: Controls + (single) joystick -->
         <aside class="rail right-rail">
