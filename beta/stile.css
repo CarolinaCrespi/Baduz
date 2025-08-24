@@ -23,6 +23,14 @@ body::after{
   pointer-events:none; z-index:999;
 }
 
+/* Migliora l'interazione touch dei pulsanti */
+button, .joystick .pad{
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+
 /* Mini edit (matita nickname) */
 .mini-edit{
   background:none; border:none; color:#0ff; font-size:12px; margin-left:6px; cursor:pointer;
@@ -89,6 +97,10 @@ body::after{
 .demo-mode .how-to-play{ display:none; }
 .demo-mode .game-container{ display:flex; min-height:100vh; padding:0; }
 .demo-mode .game-wrapper{ border:none; box-shadow:none; padding:0; }
+/* Mostra joystick/HUD anche su touch in demo-mode indipendentemente dalla larghezza */
+.demo-mode.touch-mode .joystick  { display: grid; }
+.demo-mode.touch-mode .mobile-hud{ display: block; }
+
 
 /* =========================================================
    TOP BAR (solo livello)
@@ -220,6 +232,17 @@ body::after{
 .joystick .btn-left::before { border-width:9px 12px 9px 0;  border-color:transparent #00ff66 transparent transparent; left:20%; }
 .joystick .btn-right::before{ border-width:9px 0 9px 12px;  border-color:transparent transparent transparent #00ff66; right:20%; }
 
+/* Assicura che il joystick stia sopra il canvas quando è nello stage-center */
+.stage-center { position: relative; }
+.stage-center .joystick{
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  z-index: 50;
+}
+
+
 /* =========================================================
    RESPONSIVE BREAKPOINTS
    ========================================================= */
@@ -248,11 +271,6 @@ body::after{
 /* =========================================================
    ORIENTATION RULES
    ========================================================= */
-
-/* Landscape: joystick può vivere nella right-rail (quando visibile) */
-@media (orientation: landscape){
-  .right-rail .joystick{ margin-top:12px; }
-}
 
 /* Portrait: layout “solo canvas”, joystick fisso in basso */
 @media (orientation: portrait){
