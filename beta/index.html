@@ -2,12 +2,15 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BADUZ</title>
+
+  <!-- Font & CSS -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="stile.css">
 </head>
 <body>
+  <!-- Hero -->
   <div class="game-title">BADUZ</div>
 
   <div class="game-description">
@@ -23,17 +26,20 @@
     <p>Press <strong>P</strong> to pause / resume.</p>
     <p><strong>S</strong> = Save, <strong>L</strong> = Load, <strong>R</strong> = Reset</p>
     <br>
-    <span style="color:#ff0000;text-shadow:0 0 5px #ff0000;font-size:12px;">DESKTOP VERSION ONLY (keyboard)<br>Mobile-ready with on‑screen joystick</span>
+    <span style="color:#ff0000;text-shadow:0 0 5px #ff0000;font-size:12px;">
+      DESKTOP VERSION ONLY (keyboard)<br>Mobile‑ready with on‑screen joystick
+    </span>
   </div>
 
   <div class="play-button-container">
     <button id="playBtn" class="play-button">PLAY</button>
   </div>
 
+  <!-- GAME -->
   <div class="game-container">
     <div class="game-wrapper">
 
-      <!-- TOP BAR (solo livello) -->
+      <!-- Top bar: only level -->
       <div class="topbar-minimal only-level">
         <div class="info-box big-level">
           <span>LEVEL</span>
@@ -41,15 +47,18 @@
         </div>
       </div>
 
-      <!-- AREA PRINCIPALE: 3 colonne su desktop -->
+      <!-- 3-column stage -->
       <div class="stage-rails">
-        <!-- SINISTRA: Stats -->
+        <!-- LEFT: Stats -->
         <div class="side-panel left">
           <div class="panel-title">STATS</div>
 
           <div class="info-box">
             <span>PLAYER</span>
-            <div id="playerNameDisplay">Guest <button id="btnChangeName" class="mini-edit">✎</button></div>
+            <div id="playerNameDisplay">
+              Guest
+              <button id="btnChangeName" class="mini-edit" title="Change name">✎</button>
+            </div>
           </div>
 
           <div class="info-box">
@@ -68,11 +77,11 @@
           </div>
         </div>
 
-        <!-- CENTRO: Canvas + HUD mobile + Joystick -->
+        <!-- CENTER: Canvas + compact mobile HUD -->
         <div class="stage-center">
           <canvas id="gameCanvas" width="1000" height="700"></canvas>
 
-          <!-- HUD compatta per mobile -->
+          <!-- Mobile HUD (mostrala via CSS quando serve) -->
           <div id="mobileHud" class="mobile-hud" aria-hidden="true">
             <div class="mobile-row">
               <div class="chip"><span>Player</span><strong id="mPlayer">Guest</strong></div>
@@ -87,40 +96,31 @@
               <button id="btnResetM" class="pill danger">Reset</button>
             </div>
           </div>
-
-          <!-- Joystick virtuale (mobile) -->
-          <div id="joystick" class="joystick" aria-hidden="true">
-            <button class="pad btn-up"    data-dir="up"    aria-label="Up"></button>
-            <button class="pad btn-left"  data-dir="left"  aria-label="Left"></button>
-            <div    class="pad center" aria-hidden="true"></div>
-            <button class="pad btn-right" data-dir="right" aria-label="Right"></button>
-            <button class="pad btn-down"  data-dir="down"  aria-label="Down"></button>
-          </div>
         </div>
 
-        <!-- DESTRA: Controlli verticali -->
+        <!-- RIGHT: Controls + (single) joystick -->
         <aside class="rail right-rail">
           <div class="controls-title">CONTROLS</div>
           <button id="btnHint"  class="play-button block">Hint (H)</button>
           <button id="btnSave"  class="play-button block">Save (S)</button>
           <button id="btnLoad"  class="play-button block">Load (L)</button>
           <button id="btnReset" class="play-button block danger">Reset (R)</button>
-          <div class="controls-help">            
-          <div id="joystick" class="joystick">
-            <button class="joy up"    aria-label="Up">▲</button>
-            <div class="joy-row">
-              <button class="joy left"  aria-label="Left">◀</button>
-              <div class="joy-center" aria-hidden="true"></div>
-              <button class="joy right" aria-label="Right">▶</button>
-            </div>
-            <button class="joy down"  aria-label="Down">▼</button>
-          </div>            
+
+          <!-- Virtual Joystick (unico) -->
+          <div id="joystick" class="joystick" aria-label="On-screen joystick">
+            <button class="pad btn-up"    aria-label="Up"></button>
+            <button class="pad btn-left"  aria-label="Left"></button>
+            <div    class="pad center"    aria-hidden="true"></div>
+            <button class="pad btn-right" aria-label="Right"></button>
+            <button class="pad btn-down"  aria-label="Down"></button>
+          </div>
+
+          <div class="controls-help">
             <p>Arrows = Move</p>
             <p>P = Pause</p>
           </div>
         </aside>
       </div>
-
     </div>
   </div>
 
@@ -128,21 +128,23 @@
 
   <!-- Phaser -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
-  <!-- Gioco -->
+  <!-- Game -->
   <script src="demo.js"></script>
 
-  <!-- Script per demo mode e bottone PLAY -->
+  <!-- Demo-mode + Play -->
   <script>
     (function(){
       const params = new URLSearchParams(location.search);
+
       if (params.has('demo')) {
         document.body.classList.add('demo-mode');
         const canvas = document.getElementById('gameCanvas');
         if (canvas) {
-          canvas.width  = Math.floor(window.innerWidth * 0.95);
+          canvas.width  = Math.floor(window.innerWidth  * 0.95);
           canvas.height = Math.floor(window.innerHeight * 0.85);
         }
       }
+
       const playBtn = document.getElementById('playBtn');
       if (playBtn) {
         playBtn.addEventListener('click', () => {
