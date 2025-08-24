@@ -670,8 +670,8 @@ const config = {
   },
   scene: MazeScene,
   scale: {
-    mode: Phaser.Scale.FIT,         // 🔥 Adatta il canvas allo schermo
-    autoCenter: Phaser.Scale.CENTER_BOTH // 🔥 Centra orizzontalmente e verticalmente
+    mode: Phaser.Scale.FIT,         
+    autoCenter: Phaser.Scale.CENTER_BOTH 
   }
 };
 
