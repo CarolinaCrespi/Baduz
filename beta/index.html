@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="stile.css">
 </head>
 <body>
-  <!-- ===== HERO / LANDING ===== -->
+  <!-- HERO / HOME -->
   <div class="game-title">BADUZ</div>
 
   <div class="game-description">
@@ -22,21 +22,21 @@
     <h2>HOW TO PLAY</h2>
     <p>Use the <strong>arrow keys</strong> to move Baduz through the maze.</p>
     <p>Press <strong>P</strong> to pause / resume.</p>
-    <p><strong>S</strong> = Save, <strong>L</strong> = Load, <strong>R</strong> = Reset, <strong>H</strong> = Hint</p>
+    <p><strong>S</strong> = Save, <strong>L</strong> = Load, <strong>R</strong> = Reset</p>
     <br>
-    <span style="color:#ff0000;text-shadow:0 0 5px #ff0000;font-size:12px;">DESKTOP VERSION ONLY (keyboard)</span><br>
-    <span style="color:#00ffcc;text-shadow:0 0 5px #00ffcc;font-size:12px;">Mobile ready with on‑screen joystick</span>
+    <span style="color:#ff0000;text-shadow:0 0 5px #ff0000;font-size:12px;">DESKTOP VERSION ONLY</span>
+    <div class="mobile-note">(Mobile ready with on‑screen joystick)</div>
   </div>
 
   <div class="play-button-container">
     <button id="playBtn" class="play-button">PLAY</button>
   </div>
 
-  <!-- ===== GAME AREA ===== -->
+  <!-- AREA GIOCO -->
   <div class="game-container">
     <div class="game-wrapper">
 
-      <!-- Top bar minimale: solo LEVEL (centrato) -->
+      <!-- TOP BAR: solo livello -->
       <div class="topbar-minimal only-level">
         <div class="info-box big-level">
           <span>LEVEL</span>
@@ -44,15 +44,15 @@
         </div>
       </div>
 
-      <!-- Layout a 3 colonne: sinistra (stats) | center (canvas) | destra (controls) -->
+      <!-- STAGE: 3 colonne -->
       <div class="stage-rails">
-        <!-- Colonna SINISTRA: STATS -->
-        <aside class="side-panel left">
+        <!-- SINISTRA: stats -->
+        <div class="side-panel left">
           <div class="panel-title">STATS</div>
 
           <div class="info-box">
             <span>PLAYER</span>
-            <div id="playerNameDisplay">Guest <button id="btnChangeName" class="mini-edit" aria-label="Change name">✎</button></div>
+            <div id="playerNameDisplay">Guest <button id="btnChangeName" class="mini-edit">✎</button></div>
           </div>
 
           <div class="info-box">
@@ -62,21 +62,30 @@
 
           <div class="info-box">
             <span>ORBS</span>
-            <div id="energyDisplay">0</div>
+            <div id="orbsDisplay">0</div>
           </div>
 
           <div class="info-box">
             <span>TIMER</span>
             <div id="timer-display">00:00:00</div>
           </div>
-        </aside>
+        </div>
 
-        <!-- CENTRO: Canvas -->
-        <main class="stage-center" id="game-root">
+        <!-- CENTRO: canvas + joystick mobile -->
+        <div class="stage-center">
           <canvas id="gameCanvas" width="1000" height="700"></canvas>
-        </main>
 
-        <!-- Colonna DESTRA: CONTROLS -->
+          <!-- Joystick: visibile solo in demo + mobile -->
+          <div id="joystick" class="joystick" aria-hidden="true">
+            <button class="pad btn-up"    data-dir="up"    aria-label="Up"></button>
+            <button class="pad btn-left"  data-dir="left"  aria-label="Left"></button>
+            <div    class="pad center"                            aria-hidden="true"></div>
+            <button class="pad btn-right" data-dir="right" aria-label="Right"></button>
+            <button class="pad btn-down"  data-dir="down"  aria-label="Down"></button>
+          </div>
+        </div>
+
+        <!-- DESTRA: comandi -->
         <aside class="rail right-rail">
           <div class="controls-title">CONTROLS</div>
           <button id="btnHint"  class="play-button block">Hint (H)</button>
@@ -89,36 +98,33 @@
           </div>
         </aside>
       </div>
+
     </div>
   </div>
 
   <div class="copyright">© 2025 Carolina Crespi. All rights reserved.</div>
 
-  <!-- ===== MOBILE D-PAD (joystick virtuale) ===== -->
-  <div id="dpad" class="dpad" aria-hidden="true">
-    <div class="dpad-grid">
-      <button class="dpad-btn up"    data-dir="up"    aria-label="Up">▲</button>
-      <div class="spacer"></div>
-      <button class="dpad-btn right" data-dir="right" aria-label="Right">▶</button>
-
-      <button class="dpad-btn left"  data-dir="left"  aria-label="Left">◀</button>
-      <button class="dpad-btn center" data-dir="center" aria-label="Center">◎</button>
-      <button class="dpad-btn down"  data-dir="down"  aria-label="Down">▼</button>
-    </div>
-  </div>
-
   <!-- Phaser -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
-  <!-- Game -->
+  <!-- Gioco -->
   <script src="demo.js"></script>
 
-  <!-- Landing → Demo mode toggle -->
+  <!-- Modalità demo & PLAY -->
   <script>
     (function () {
       const params = new URLSearchParams(location.search);
+
+      // Demo mode = pagina di gioco
       if (params.has('demo')) {
         document.body.classList.add('demo-mode');
+        const canvas = document.getElementById('gameCanvas');
+        if (canvas) {
+          canvas.width  = Math.floor(window.innerWidth * 0.95);
+          canvas.height = Math.floor(window.innerHeight * 0.85);
+        }
       }
+
+      // PLAY apre la stessa pagina con ?demo=true
       const playBtn = document.getElementById('playBtn');
       if (playBtn) {
         playBtn.addEventListener('click', () => {
