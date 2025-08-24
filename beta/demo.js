@@ -1,10 +1,9 @@
-/* =========================================================================
- * BADUZ – Phaser 3 Maze Demo (20 levels)
- * Features: nickname & per-player saves, orbs collectibles, glow hint (BFS),
- *            joystick virtuale per mobile (d‑pad), Phaser Scale.FIT
- * ========================================================================= */
+// ===============================
+// BADUZ — Demo with Orbs + Hints
+// Mobile joystick + autoscale
+// ===============================
 
-/* ------------------ RNG utilities ------------------ */
+// --- RNG utilities ---
 function mulberry32(seed) {
   return function() {
     let t = (seed += 0x6D2B79F5);
@@ -17,7 +16,7 @@ function makeLevelSeed(runSeed, level) {
   return (runSeed ^ (level * 2654435761)) >>> 0;
 }
 
-/* ------------------ Player name ------------------ */
+// --- Player Name ---
 function getPlayerName() {
   let name = localStorage.getItem('baduz-player-name');
   if (!name) {
@@ -27,7 +26,6 @@ function getPlayerName() {
   return name;
 }
 let PLAYER_NAME = getPlayerName();
-
 function changePlayerName() {
   const newName = prompt("Insert new nickname:", PLAYER_NAME) || PLAYER_NAME;
   PLAYER_NAME = newName;
@@ -36,91 +34,35 @@ function changePlayerName() {
   if (nameEl) nameEl.firstChild.textContent = newName + " ";
 }
 
-/* ------------------ Save system (namespaced by nickname) ------------------ */
-function saveKey() {
-  return `baduz-save-v1:${PLAYER_NAME}`;
-}
-function saveGameSnapshot(state) {
-  try { localStorage.setItem(saveKey(), JSON.stringify(state)); return true; }
-  catch(e){ console.error('Save failed', e); return false; }
-}
-function loadGameSnapshot() {
-  try { const s = localStorage.getItem(saveKey()); return s ? JSON.parse(s) : null; }
-  catch(e){ console.error('Load failed', e); return null; }
-}
+// --- Save system (per nickname) ---
+function saveKey() { return `baduz-save-v1:${PLAYER_NAME}`; }
+function saveGameSnapshot(state) { try { localStorage.setItem(saveKey(), JSON.stringify(state)); return true; } catch(e){ console.error('Save failed', e); return false; } }
+function loadGameSnapshot() { try { const s = localStorage.getItem(saveKey()); return s ? JSON.parse(s) : null; } catch(e){ console.error('Load failed', e); return null; } }
 function resetGameSnapshot() { localStorage.removeItem(saveKey()); }
 
-/* ------------------ Score and Hint tuning ------------------ */
-const SCORE_K     = 5;
+// --- Score tuning ---
+const SCORE_K = 5;
 const SCORE_ALPHA = 1.0;
-const SCORE_EPS   = 1.0;
+const SCORE_EPS = 1.0;
 function computeLevelScore(level, elapsedMs) {
   const tSec = Math.max(0, elapsedMs / 1000);
   const raw = SCORE_K * Math.pow(level, SCORE_ALPHA) / (tSec + SCORE_EPS);
   return Math.max(1, Math.round(raw));
 }
-const HINT_COST = 3; // orbs per hint
 
-/* ------------------ D-PAD (mobile joystick) global state ------------------ */
-const DPAD = { up:false, down:false, left:false, right:false };
+// --- Hint / Orbs ---
+const HINT_COST = 3; // costo in orbs per usare l'hint
 
-// show dpad on touch devices
-(function attachTouchClass(){
-  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  if (isTouch) document.body.classList.add('touch');
-})();
-
-// bind dpad buttons when DOM is ready
-window.addEventListener('DOMContentLoaded', () => {
-  const dpad = document.getElementById('dpad');
-  if (!dpad) return;
-
-  const setDir = (dir, on) => {
-    if (dir === 'up' || dir === 'down' || dir === 'left' || dir === 'right') {
-      DPAD[dir] = on;
-    } else if (dir === 'center' && on) {
-      DPAD.up = DPAD.down = DPAD.left = DPAD.right = false;
-    }
-  };
-
-  const onPress = (e) => {
-    const btn = e.target.closest('.dpad-btn');
-    if (!btn) return;
-    e.preventDefault();
-    setDir(btn.dataset.dir, true);
-  };
-  const onRelease = (e) => {
-    const btn = e.target.closest('.dpad-btn');
-    if (!btn) return;
-    e.preventDefault();
-    setDir(btn.dataset.dir, false);
-  };
-
-  dpad.addEventListener('pointerdown', onPress,    { passive:false });
-  dpad.addEventListener('pointerup',   onRelease,  { passive:false });
-  dpad.addEventListener('pointerleave',onRelease,  { passive:false });
-  dpad.addEventListener('pointercancel',onRelease, { passive:false });
-
-  // iOS: evita doppio-tap zoom
-  let lastTap = 0;
-  dpad.addEventListener('touchend', (e) => {
-    const now = Date.now();
-    if (now - lastTap < 400) e.preventDefault();
-    lastTap = now;
-  }, { passive:false });
-});
-
-/* ------------------ Phaser Scene ------------------ */
 class MazeScene extends Phaser.Scene {
   constructor(){ super('MazeScene'); }
 
-  /* -------- HUD helpers -------- */
+  // ---- HUD helpers ----
   updateHUD(){
     const levelEl = document.getElementById('levelDisplay');
     const timerEl = document.getElementById('timer-display');
     const scoreEl = document.getElementById('score');
     const nameEl  = document.getElementById('playerNameDisplay');
-    const orbsEl  = document.getElementById('energyDisplay');
+    const orbsEl  = document.getElementById('orbsDisplay') || document.getElementById('energyDisplay');
 
     if (levelEl) levelEl.textContent = `${this.currentLevel}`;
     if (timerEl) timerEl.textContent = this.timerStarted ? this.formatTime(Date.now() - this.startTime) : '00:00:00';
@@ -139,7 +81,7 @@ class MazeScene extends Phaser.Scene {
     this.time.delayedCall(1200, () => { if (this.toast) this.toast.destroy(); });
   }
 
-  /* -------- Scene lifecycle -------- */
+  // ---- Scene lifecycle ----
   init(data){
     this.currentLevel = (data && data.currentLevel !== undefined) ? data.currentLevel : 1;
     this.totalTime    = (data && data.totalTime !== undefined) ? data.totalTime : 0;
@@ -172,7 +114,6 @@ class MazeScene extends Phaser.Scene {
   create(){
     let size, startPos = {x:0,y:0}, exitPos = {x:0,y:0};
 
-    // Maze build or restore
     if (this.restoreSnapshot && this.restoreSnapshot.mazeLayout && this.restoreSnapshot.entrance && this.restoreSnapshot.exit) {
       this.mazeLayout = this.restoreSnapshot.mazeLayout;
       this.entrance   = this.restoreSnapshot.entrance;
@@ -190,7 +131,7 @@ class MazeScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, size * this.tileSize, size * this.tileSize);
     this.topWalls = this.physics.add.staticGroup();
 
-    // Draw maze
+    // Disegno labirinto
     for (let row = 0; row < size; row++) {
       for (let col = 0; col < size; col++) {
         const x = col * this.tileSize;
@@ -206,21 +147,17 @@ class MazeScene extends Phaser.Scene {
         } else {
           if (row === this.entrance.y && col === this.entrance.x) {
             startPos = { x: x + this.tileSize / 2, y: y + this.tileSize / 2 };
-            this.add.text(x + 5, y + 5, 'START', {
-              fontSize: '13px', fill: '#00ff00', fontFamily: 'Arial', stroke: '#000', strokeThickness: 2
-            });
+            this.add.text(x + 5, y + 5, 'START', { fontSize: '13px', fill: '#00ff00', fontFamily: 'Arial', stroke: '#000', strokeThickness: 2 });
           }
           if (row === this.exit.y && col === this.exit.x) {
             exitPos = { x: x + this.tileSize / 2, y: y + this.tileSize / 2 };
-            this.add.text(x + 5, y + 5, 'EXIT', {
-              fontSize: '13px', fill: '#ff0000', fontFamily: 'Arial', stroke: '#000', strokeThickness: 2
-            });
+            this.add.text(x + 5, y + 5, 'EXIT',  { fontSize: '13px', fill: '#ff0000', fontFamily: 'Arial', stroke: '#000', strokeThickness: 2 });
           }
         }
       }
     }
 
-    // Player (Baduz) + glow
+    // Player (Baduz)
     if (this.ant) this.ant.destroy();
     const startFromSnapshot = this.restoreSnapshot && this.restoreSnapshot.player;
     const spawn = startFromSnapshot ? this.restoreSnapshot.player : startPos;
@@ -233,7 +170,7 @@ class MazeScene extends Phaser.Scene {
     this.ant.body.setBounce(0);
     this.physics.add.collider(this.ant, this.topWalls);
 
-    // glow outline (light tint)
+    // Glow attorno alla palla
     const GLOW_COLOR = 0xff99ff;
     const glowWidths = [10, 5, 2];
     const glowAlphas = [0.15, 0.35, 0.8];
@@ -246,7 +183,7 @@ class MazeScene extends Phaser.Scene {
       });
     });
 
-    // Camera, input, exit trigger
+    // Camera & input
     this.cameras.main.startFollow(this.ant, true, 0.1, 0.1);
     this.cameras.main.setZoom(1);
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -255,7 +192,7 @@ class MazeScene extends Phaser.Scene {
     this.physics.add.existing(exitZone, true);
     this.physics.add.overlap(this.ant, exitZone, this.nextLevel, null, this);
 
-    // Orbs (collectibles)
+    // Orbs (collezionabili)
     this.energyGroup = this.physics.add.group();
     const rngForOrbs = mulberry32((this.rngSeed >>> 0) + 999);
     const orbsCount = Math.max(3, 3 + Math.floor(this.currentLevel / 2));
@@ -267,43 +204,32 @@ class MazeScene extends Phaser.Scene {
         const px = rx * this.tileSize + this.tileSize/2;
         const py = ry * this.tileSize + this.tileSize/2;
 
-        // base orb (fill + stroke)
-        const FILL_COLOR   = 0x00ff66;
+        // colori orbs
+        const FILL_COLOR = 0x00ff66;
         const STROKE_COLOR = 0x33ffaa;
 
         const orb = this.add.circle(px, py, 6, FILL_COLOR);
         orb.setStrokeStyle(2, STROKE_COLOR, 1);
-
         this.physics.add.existing(orb);
         orb.body.setCircle(6);
         orb.body.setImmovable(true);
         this.energyGroup.add(orb);
 
-        // breathing glow "pulse"
+        // glow che respira
         const pulse = this.add.circle(px, py, 8, FILL_COLOR, 0.25);
         pulse.setDepth(orb.depth - 1);
         orb.pulse = pulse;
         orb.pulseTween = this.tweens.add({
-          targets: pulse,
-          scale: 1.8,
-          alpha: 0,
-          duration: 1200,
-          ease: 'Sine.out',
-          yoyo: false,
-          repeat: -1,
-          onRepeat: () => {
-            pulse.setScale(1);
-            pulse.setAlpha(0.25);
-          }
+          targets: pulse, scale: 1.8, alpha: 0, duration: 1200, ease: 'Sine.out', yoyo: false, repeat: -1,
+          onRepeat: () => { pulse.setScale(1); pulse.setAlpha(0.25); }
         });
 
         placed++;
       }
     }
-    // overlap: collect orb + clean pulse
     this.physics.add.overlap(this.ant, this.energyGroup, (ant, orb) => {
-      if (orb.pulseTween) orb.pulseTween.stop();
-      if (orb.pulse && orb.pulse.destroy) orb.pulse.destroy();
+      if (orb.pulseTween) { orb.pulseTween.stop(); }
+      if (orb.pulse && orb.pulse.destroy) { orb.pulse.destroy(); }
       orb.destroy();
       this.coins++;
       this.showToast("+1 Orb", "#00ffff");
@@ -315,14 +241,14 @@ class MazeScene extends Phaser.Scene {
     this.timerStarted = false;
     this.startTime = 0;
 
-    // Shortcuts (keyboard)
+    // Shortcuts
     this.input.keyboard.on('keydown-P', this.togglePause, this);
     this.input.keyboard.on('keydown-S', () => { this.handleSave();  this.showToast('Saved');  });
     this.input.keyboard.on('keydown-L', () => { this.handleLoad();  this.showToast('Loaded'); });
     this.input.keyboard.on('keydown-R', () => { this.handleReset(); this.showToast('Level reset'); });
     this.input.keyboard.on('keydown-H', () => { this.useHint(); });
 
-    // Buttons UI
+    // Bottoni UI
     const withBtn = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', () => fn.call(this)); };
     withBtn('btnSave',  function(){ this.handleSave();  this.showToast('Saved');  });
     withBtn('btnLoad',  function(){ this.handleLoad();  this.showToast('Loaded'); });
@@ -332,33 +258,55 @@ class MazeScene extends Phaser.Scene {
     const btnChange = document.getElementById('btnChangeName');
     if (btnChange) btnChange.addEventListener('click', () => { changePlayerName(); this.updateHUD(); });
 
+    // Joystick touch
+    this.touchDir = { up:false, down:false, left:false, right:false };
+    this.attachPadControls();
+
     this.updateHUD();
   }
 
   update(){
     if (this.isGameOver || this.paused) return;
 
-    // Movement: keyboard OR d-pad
-    let vx = 0, vy = 0;
-    if (this.cursors.left.isDown  || DPAD.left)  vx -= 200;
-    if (this.cursors.right.isDown || DPAD.right) vx += 200;
-    if (this.cursors.up.isDown    || DPAD.up)    vy -= 200;
-    if (this.cursors.down.isDown  || DPAD.down)  vy += 200;
-    this.ant.body.setVelocity(vx, vy);
+    // Movimento: tastiera OR joystick
+    this.ant.body.setVelocity(0);
+    const speed = 200;
+    const left  = this.cursors.left.isDown  || this.touchDir.left;
+    const right = this.cursors.right.isDown || this.touchDir.right;
+    const up    = this.cursors.up.isDown    || this.touchDir.up;
+    const down  = this.cursors.down.isDown  || this.touchDir.down;
+    if (left)  this.ant.body.setVelocityX(-speed);
+    if (right) this.ant.body.setVelocityX(speed);
+    if (up)    this.ant.body.setVelocityY(-speed);
+    if (down)  this.ant.body.setVelocityY(speed);
 
-    // Start timer on first movement
+    // Avvio timer al primo movimento
     if (!this.timerStarted) {
       if (Math.abs(this.ant.x - this.antStartPos.x) > 4 || Math.abs(this.ant.y - this.antStartPos.y) > 4) {
         this.startTime = Date.now();
         this.timerStarted = true;
       }
     }
-
-    // Tick HUD timer
     if (this.timerStarted) {
       const timerEl = document.getElementById('timer-display');
       if (timerEl) timerEl.textContent = this.formatTime(Date.now() - this.startTime);
     }
+  }
+
+  attachPadControls(){
+    const joy = document.getElementById('joystick');
+    if (!joy) return;
+    const setDir = (dir, val) => { this.touchDir[dir] = val; };
+    const start = e => { e.preventDefault(); setDir(e.currentTarget.dataset.dir, true); };
+    const end   = e => { e.preventDefault(); setDir(e.currentTarget.dataset.dir, false); };
+    joy.querySelectorAll('[data-dir]').forEach(btn=>{
+      btn.addEventListener('touchstart', start, {passive:false});
+      btn.addEventListener('touchend',   end,   {passive:false});
+      btn.addEventListener('touchcancel',end,   {passive:false});
+      btn.addEventListener('mousedown',  start);
+      btn.addEventListener('mouseup',    end);
+      btn.addEventListener('mouseleave', end);
+    });
   }
 
   togglePause(){
@@ -385,23 +333,17 @@ class MazeScene extends Phaser.Scene {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes
-      .toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
-  /* -------- Hint (glowing path) -------- */
+  // ---- Hint (glow) ----
   useHint(){
-    if (this.coins < HINT_COST) {
-      this.showToast("Not enough orbs!", "#ffcc00");
-      return;
-    }
-    this.coins -= HINT_COST;
-    this.updateHUD();
+    if (this.coins < HINT_COST) { this.showToast("Not enough orbs!", "#ffcc00"); return; }
+    this.coins -= HINT_COST; this.updateHUD();
 
     const path = this.findPath();
     if (!path) { this.showToast("No path found!", "#ff0000"); return; }
 
-    // multi‑pass glow (from bright outer to solid inner)
     const glowColors = [0x33ffaa, 0x00ff66, 0x00ff66];
     const glowWidths = [10, 6, 3];
     const glowAlphas = [0.15, 0.35, 0.9];
@@ -416,19 +358,11 @@ class MazeScene extends Phaser.Scene {
         if (j === 0) g.moveTo(x, y); else g.lineTo(x, y);
       });
       g.strokePath();
-
-      this.tweens.add({
-        targets: g,
-        alpha: 0,
-        duration: 3000,
-        onComplete: () => g.destroy()
-      });
+      this.tweens.add({ targets: g, alpha: 0, duration: 3000, onComplete: () => g.destroy() });
     }
-
     this.showToast("Hint used!", "#00ffff");
   }
 
-  // BFS shortest path on corridor cells
   findPath(){
     const size  = this.mazeLayout.length;
     const start = { x: Math.floor(this.ant.x/this.tileSize), y: Math.floor(this.ant.y/this.tileSize) };
@@ -459,7 +393,7 @@ class MazeScene extends Phaser.Scene {
     return null;
   }
 
-  /* -------- Save/Load/Reset -------- */
+  // ---- Save/Load/Reset ----
   getSnapshot(full=false){
     const elapsed = this.timerStarted ? (Date.now() - this.startTime) : 0;
     const base = {
@@ -481,14 +415,12 @@ class MazeScene extends Phaser.Scene {
   }
 
   handleSave(){ saveGameSnapshot(this.getSnapshot(true)); }
-
   handleLoad(){
     const snap = loadGameSnapshot();
     if (!snap) { this.showToast('No save found', '#ffcc00'); return; }
     this.scene.stop('MazeScene');
     this.scene.start('MazeScene', { snapshot: snap });
   }
-
   handleReset(){
     const sameLevel    = this.currentLevel;
     const sameRunSeed  = this.runSeed;
@@ -515,10 +447,7 @@ class MazeScene extends Phaser.Scene {
 
   nextLevel(){
     let levelTime = 0;
-    if (this.timerStarted) {
-      levelTime = Date.now() - this.startTime;
-      this.totalTime += levelTime;
-    }
+    if (this.timerStarted) { levelTime = Date.now() - this.startTime; this.totalTime += levelTime; }
     const gain = computeLevelScore(this.currentLevel, levelTime);
     this.score += gain;
     this.showToast(`+${gain} pts`, '#00ff00');
@@ -535,7 +464,7 @@ class MazeScene extends Phaser.Scene {
       playerName: PLAYER_NAME
     });
 
-    // Demo estesa fino a 20
+    // Demo fino a 20
     if (this.currentLevel > 20) {
       this.isGameOver = true;
       this.cameras.main.stopFollow();
@@ -545,10 +474,8 @@ class MazeScene extends Phaser.Scene {
       const hours   = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
       const seconds = totalSeconds % 60;
-      const formattedTotal = `${hours.toString().padStart(2, '0')}:${minutes
-        .toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      const formattedTotal = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-      // Schermata finale con pannello dietro (no sovrapposizioni)
       const cx = this.cameras.main.centerX;
       const cy = this.cameras.main.centerY;
       const endContainer = this.add.container(cx, cy).setScrollFactor(0).setDepth(2000);
@@ -559,16 +486,14 @@ class MazeScene extends Phaser.Scene {
       ).setOrigin(0.5);
 
       const stats = this.add.text(0, 60,
-        `Total Time: ${formattedTotal}\nScore: ${this.score}\nOrbs: ${this.coins}`,
+        `Total Time: ${formattedTotal}\nScore: ${this.score}`,
         { fontSize: '24px', fill: '#00ff00', fontFamily: 'Arial', stroke: '#000', strokeThickness: 2, align:'center' }
       ).setOrigin(0.5);
 
       const padX = 30, padY = 30, gap = 20;
       const panelWidth  = Math.max(title.width, stats.width) + padX * 2;
       const panelHeight = title.height + stats.height + gap + padY * 2;
-
-      const panel = this.add.rectangle(0, 10, panelWidth, panelHeight, 0x000000, 0.85)
-        .setStrokeStyle(2, 0x00ffff, 0.8);
+      const panel = this.add.rectangle(0, 10, panelWidth, panelHeight, 0x000000, 0.85).setStrokeStyle(2, 0x00ffff, 0.8);
 
       endContainer.add([panel, title, stats]);
 
@@ -578,7 +503,7 @@ class MazeScene extends Phaser.Scene {
       return;
     }
 
-    // setup next level
+    // next level
     this.isGameOver   = false;
     this.timerStarted = false;
     this.startTime    = 0;
@@ -595,7 +520,7 @@ class MazeScene extends Phaser.Scene {
     });
   }
 
-  /* -------- Maze generation (Prim) -------- */
+  // ---- Maze generation ----
   generateMaze(level, rng){
     const size = 5 + level * 2;
     const maze = Array(size).fill().map(() => Array(size).fill(0));
@@ -603,7 +528,6 @@ class MazeScene extends Phaser.Scene {
     const [start, end] = this.placeEntranceExit(maze, rng);
     return { maze, entrance: {x:start.x, y:start.y}, exit: {x:end.x, y:end.y}, size };
   }
-
   generatePrimMaze(maze, rng){
     const size = maze.length;
     let walls = [];
@@ -614,7 +538,6 @@ class MazeScene extends Phaser.Scene {
     const startCell = possibleCells[Math.floor(rng() * possibleCells.length)];
     maze[startCell.y][startCell.x] = 1;
     this.addWalls(startCell.x, startCell.y, maze, walls);
-
     while (walls.length > 0) {
       const randomIndex = Math.floor(rng() * walls.length);
       const wall = walls.splice(randomIndex, 1)[0];
@@ -657,24 +580,20 @@ class MazeScene extends Phaser.Scene {
   }
 }
 
-/* ------------------ Phaser Game Config ------------------ */
+// Phaser config con autoscale FIT
 const config = {
   type: Phaser.CANVAS,
   width: 1000,
   height: 700,
   canvas: document.getElementById('gameCanvas'),
-  transparent: true,  
-  physics: { 
-    default: 'arcade', 
-    arcade: { gravity: { y: 0 }, debug: false } 
-  },
+  transparent: true,
+  physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
   scene: MazeScene,
   scale: {
-    mode: Phaser.Scale.FIT,         
-    autoCenter: Phaser.Scale.CENTER_BOTH 
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH
   }
 };
-
 const game = new Phaser.Game(config);
 
 // Autosave on exit
@@ -682,5 +601,3 @@ window.addEventListener('beforeunload', () => {
   const scene = game?.scene?.keys?.['MazeScene'];
   if (scene) saveGameSnapshot(scene.getSnapshot(true));
 });
-
-
