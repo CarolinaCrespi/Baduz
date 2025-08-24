@@ -176,3 +176,65 @@ body::after{
   .topbar-minimal{ padding:6px 8px; }
   .game-wrapper{ padding:10px; }
 }
+
+/* ====== JOYSTICK: dimensioni base (landscape-first) ====== */
+:root{
+  --joy-btn:    56px;  /* tasti freccia */
+  --joy-gap:    10px;  /* spazio tra i tasti */
+  --joy-center: 48px;  /* cerchio centrale decorativo */
+}
+
+/* Portrait: tasti un filo più piccoli */
+@media (orientation: portrait){
+  :root{
+    --joy-btn:    52px;
+    --joy-gap:    8px;
+    --joy-center: 44px;
+  }
+}
+
+/* Aspetto tasti joystick (stile neon coerente) */
+.joystick{
+  display:flex; flex-direction:column; align-items:center; gap: var(--joy-gap);
+}
+.joy-row{ display:flex; align-items:center; gap: var(--joy-gap); }
+
+.joy{
+  width:var(--joy-btn); height:var(--joy-btn);
+  border:2px solid #00ff99; border-radius:10px;
+  background:rgba(0,0,0,.35);
+  color:#00ffcc; font-weight:bold;
+  box-shadow:0 0 16px #00ffcc, inset 0 0 10px #00ffaa;
+  text-shadow:0 0 6px #00ffee;
+}
+.joy:active{ transform:scale(.96); }
+
+.joy-center{
+  width:var(--joy-center); height:var(--joy-center);
+  border-radius:50%;
+  border:2px solid #00ff99;
+  box-shadow:0 0 16px #00ffcc, inset 0 0 10px #00ffaa;
+  background:rgba(0,0,0,.25);
+}
+
+/* --- Posizionamento in LANDSCAPE --- */
+@media (orientation: landscape){
+  .right-rail .joystick{
+    margin-top:12px;
+  }
+}
+
+/* --- Layout in PORTRAIT: solo gioco + joystick in basso --- */
+@media (orientation: portrait){
+  /* nascondo pannelli laterali; tengo solo il canvas e (se vuoi) la topbar-level */
+  .left-rail, .right-rail{ display:none; }
+  .stage-rails{ grid-template-columns: 1fr; }
+  /* metto il joystick fisso in basso al centro */
+  #joystick{
+    position:fixed;
+    left:50%; transform:translateX(-50%);
+    bottom:12px; z-index:50;
+  }
+  /* lascio spazio sotto il canvas per non coprirlo col joystick */
+  .stage-center{ padding-bottom: calc(var(--joy-center) + var(--joy-btn) + 28px); }
+}
