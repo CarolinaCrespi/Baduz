@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="stile.css">
 </head>
 <body>
-  <!-- HERO / HOME -->
   <div class="game-title">BADUZ</div>
 
   <div class="game-description">
@@ -24,19 +23,17 @@
     <p>Press <strong>P</strong> to pause / resume.</p>
     <p><strong>S</strong> = Save, <strong>L</strong> = Load, <strong>R</strong> = Reset</p>
     <br>
-    <span style="color:#ff0000;text-shadow:0 0 5px #ff0000;font-size:12px;">DESKTOP VERSION ONLY</span>
-    <div class="mobile-note">(Mobile ready with on‑screen joystick)</div>
+    <span style="color:#ff0000;text-shadow:0 0 5px #ff0000;font-size:12px;">DESKTOP VERSION ONLY (keyboard)<br>Mobile-ready with on‑screen joystick</span>
   </div>
 
   <div class="play-button-container">
     <button id="playBtn" class="play-button">PLAY</button>
   </div>
 
-  <!-- AREA GIOCO -->
   <div class="game-container">
     <div class="game-wrapper">
 
-      <!-- TOP BAR: solo livello -->
+      <!-- TOP BAR (solo livello) -->
       <div class="topbar-minimal only-level">
         <div class="info-box big-level">
           <span>LEVEL</span>
@@ -44,9 +41,9 @@
         </div>
       </div>
 
-      <!-- STAGE: 3 colonne -->
+      <!-- AREA PRINCIPALE: 3 colonne su desktop -->
       <div class="stage-rails">
-        <!-- SINISTRA: stats -->
+        <!-- SINISTRA: Stats -->
         <div class="side-panel left">
           <div class="panel-title">STATS</div>
 
@@ -62,7 +59,7 @@
 
           <div class="info-box">
             <span>ORBS</span>
-            <div id="orbsDisplay">0</div>
+            <div id="energyDisplay">0</div>
           </div>
 
           <div class="info-box">
@@ -71,21 +68,37 @@
           </div>
         </div>
 
-        <!-- CENTRO: canvas + joystick mobile -->
+        <!-- CENTRO: Canvas + HUD mobile + Joystick -->
         <div class="stage-center">
           <canvas id="gameCanvas" width="1000" height="700"></canvas>
 
-          <!-- Joystick: visibile solo in demo + mobile -->
+          <!-- HUD compatta per mobile -->
+          <div id="mobileHud" class="mobile-hud" aria-hidden="true">
+            <div class="mobile-row">
+              <div class="chip"><span>Player</span><strong id="mPlayer">Guest</strong></div>
+              <div class="chip"><span>Score</span><strong id="mScore">00000</strong></div>
+              <div class="chip"><span>Orbs</span><strong id="mOrbs">0</strong></div>
+              <div class="chip"><span>Timer</span><strong id="mTimer">00:00:00</strong></div>
+            </div>
+            <div class="mobile-row">
+              <button id="btnHintM"  class="pill">Hint</button>
+              <button id="btnSaveM"  class="pill">Save</button>
+              <button id="btnLoadM"  class="pill">Load</button>
+              <button id="btnResetM" class="pill danger">Reset</button>
+            </div>
+          </div>
+
+          <!-- Joystick virtuale (mobile) -->
           <div id="joystick" class="joystick" aria-hidden="true">
             <button class="pad btn-up"    data-dir="up"    aria-label="Up"></button>
             <button class="pad btn-left"  data-dir="left"  aria-label="Left"></button>
-            <div    class="pad center"                            aria-hidden="true"></div>
+            <div    class="pad center" aria-hidden="true"></div>
             <button class="pad btn-right" data-dir="right" aria-label="Right"></button>
             <button class="pad btn-down"  data-dir="down"  aria-label="Down"></button>
           </div>
         </div>
 
-        <!-- DESTRA: comandi -->
+        <!-- DESTRA: Controlli verticali -->
         <aside class="rail right-rail">
           <div class="controls-title">CONTROLS</div>
           <button id="btnHint"  class="play-button block">Hint (H)</button>
@@ -109,12 +122,10 @@
   <!-- Gioco -->
   <script src="demo.js"></script>
 
-  <!-- Modalità demo & PLAY -->
+  <!-- Script per demo mode e bottone PLAY -->
   <script>
-    (function () {
+    (function(){
       const params = new URLSearchParams(location.search);
-
-      // Demo mode = pagina di gioco
       if (params.has('demo')) {
         document.body.classList.add('demo-mode');
         const canvas = document.getElementById('gameCanvas');
@@ -123,8 +134,6 @@
           canvas.height = Math.floor(window.innerHeight * 0.85);
         }
       }
-
-      // PLAY apre la stessa pagina con ?demo=true
       const playBtn = document.getElementById('playBtn');
       if (playBtn) {
         playBtn.addEventListener('click', () => {
@@ -136,4 +145,3 @@
   </script>
 </body>
 </html>
-
