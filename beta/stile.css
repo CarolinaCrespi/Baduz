@@ -1,13 +1,15 @@
-/* =========================================================
+/* =======================
    BASE / THEME
-   ========================================================= */
+   ======================= */
 * { margin:0; padding:0; box-sizing:border-box; }
 
 :root{
   /* Joystick sizing variables */
-  --joy-size: 120px;   /* diametro del pad (consigliato 110–140) */
-  --joy-gap:   10px;   /* spazio tra i tasti */
+  --joy-size: 118px;     /* diametro del pad */
+  --joy-gap:   10px;     /* spazio tra i tasti */
 }
+
+html, body { height:auto; overflow-y:auto; }  /* permette lo scroll */
 
 body{
   background-color:#0a0a0a;
@@ -23,24 +25,16 @@ body::after{
   pointer-events:none; z-index:999;
 }
 
-/* Migliora l'interazione touch dei pulsanti */
-button, .joystick .pad{
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-
-/* Mini edit (matita nickname) */
+/* Matita nickname */
 .mini-edit{
   background:none; border:none; color:#0ff; font-size:12px; margin-left:6px; cursor:pointer;
   text-shadow:0 0 5px #0ff;
 }
 .mini-edit:hover{ color:#fff; text-shadow:0 0 8px #fff; }
 
-/* =========================================================
-   HOME: TITOLI / TESTI
-   ========================================================= */
+/* =======================
+   HOME / HERO
+   ======================= */
 .game-title{
   text-align:center; font-size:60px; color:#0ff;
   text-shadow:0 0 30px #f0f, 0 0 20px #f0f, 0 0 30px #f0f;
@@ -51,15 +45,35 @@ button, .joystick .pad{
   margin-top:10px; margin-bottom:20px; text-shadow:0 0 5px #0ff;
 }
 .how-to-play{
-  text-align:center; font-size:18px; color:#0ff; margin-top:20px; padding:15px;
+  text-align:center; font-size:18px; color:#0ff; padding:15px;
   border:2px solid #0ff; box-shadow:0 0 10px #0ff; width:60%; margin:20px auto;
 }
 .how-to-play h2{ font-size:24px; text-shadow:0 0 10px #0ff; margin-bottom:10px; }
 .how-to-play p{ margin:5px 0; }
 
-/* =========================================================
+.play-button-container{ text-align:center; margin:50px 0; }
+.play-button{
+  padding:15px 30px; background:#0f0; border:2px solid #0f0; color:#000;
+  font-family:'Press Start 2P', cursive; cursor:pointer; transition:all .3s;
+  box-shadow:0 0 10px #0f0; text-transform:uppercase; font-size:24px;
+}
+.play-button:hover{ background:#000; color:#0f0; transform:scale(1.05); }
+.play-button.block{ width:100%; margin-bottom:10px; font-size:14px; padding:10px 12px; }
+.play-button.danger{ background:#f33; border-color:#f33; color:#000; }
+
+/* =======================
+   DEMO MODE
+   ======================= */
+.demo-mode .game-title,
+.demo-mode .game-description,
+.demo-mode .play-button-container,
+.demo-mode .how-to-play{ display:none; }
+.demo-mode .game-container{ display:flex; min-height:100vh; padding:0; }
+.demo-mode .game-wrapper{ border:none; box-shadow:none; padding:0; }
+
+/* =======================
    GAME WRAPPER / CANVAS
-   ========================================================= */
+   ======================= */
 .game-container{ display:none; justify-content:center; align-items:center; min-height:100vh; padding:20px; flex-direction:column; }
 
 .game-wrapper{
@@ -75,36 +89,9 @@ button, .joystick .pad{
   box-shadow:0 0 20px #f0f, inset 0 0 10px #f0f;
 }
 
-/* =========================================================
-   BUTTONS (HOME + CONTROLS)
-   ========================================================= */
-.play-button-container{ text-align:center; margin:50px 0; }
-.play-button{
-  padding:15px 30px; background:#0f0; border:2px solid #0f0; color:#000;
-  font-family:'Press Start 2P', cursive; cursor:pointer; transition:all .3s;
-  box-shadow:0 0 10px #0f0; text-transform:uppercase; font-size:24px;
-}
-.play-button:hover{ background:#000; color:#0f0; transform:scale(1.05); }
-.play-button.mini{ font-size:12px; padding:8px 12px; }
-.play-button.danger{ background:#f33; border-color:#f33; color:#000; }
-
-/* =========================================================
-   DEMO MODE (quando apri con ?demo=true)
-   ========================================================= */
-.demo-mode .game-title,
-.demo-mode .game-description,
-.demo-mode .play-button-container,
-.demo-mode .how-to-play{ display:none; }
-.demo-mode .game-container{ display:flex; min-height:100vh; padding:0; }
-.demo-mode .game-wrapper{ border:none; box-shadow:none; padding:0; }
-/* Mostra joystick/HUD anche su touch in demo-mode indipendentemente dalla larghezza */
-.demo-mode.touch-mode .joystick  { display: grid; }
-.demo-mode.touch-mode .mobile-hud{ display: block; }
-
-
-/* =========================================================
-   TOP BAR (solo livello)
-   ========================================================= */
+/* =======================
+   TOP BAR (LEVEL)
+   ======================= */
 .topbar-minimal{
   display:grid; grid-template-columns:auto; gap:28px; align-items:center; justify-content:center;
   margin-bottom:14px; padding:10px; background:#111; border:2px solid #90f; box-shadow:0 0 10px #90f;
@@ -116,21 +103,16 @@ button, .joystick .pad{
   text-shadow:0 0 18px #0ff, 0 0 28px #f0f;
 }
 
-/* =========================================================
-   LAYOUT 3 COLONNE (DESKTOP)
-   ========================================================= */
+/* =======================
+   3-COLUMN LAYOUT (desktop)
+   ======================= */
 .stage-rails{
   display:grid; grid-template-columns:220px 1fr 220px; gap:16px; align-items:start;
 }
-
-/* Colonne laterali */
 .rail{
   background:#111; border:2px solid #0ff; box-shadow:0 0 10px #0ff, inset 0 0 8px #0ff;
   border-radius:8px; padding:12px;
 }
-.left-rail{ justify-self:start; }
-.right-rail{ justify-self:end; }
-
 .side-panel{
   background-color:#111; border:2px solid #0ff; box-shadow:0 0 12px #0ff;
   padding:10px; border-radius:8px; width:210px;
@@ -140,33 +122,22 @@ button, .joystick .pad{
   text-align:center; font-size:14px; color:#0ff; margin-bottom:8px; text-shadow:0 0 10px #0ff;
   border-bottom:1px solid #0ff; padding-bottom:4px;
 }
-
-/* Box informativi */
 .info-box{ text-align:center; padding:10px; }
 .info-box span{ display:block; margin-bottom:5px; color:#0ff; text-shadow:0 0 10px #0ff; }
-
-/* Centro (canvas) */
 .stage-center{ position:relative; display:flex; justify-content:center; align-items:center; }
 
-/* Pannello comandi a destra */
-.controls-title{
-  font-size:12px; color:#0ff; text-align:center; margin-bottom:10px; letter-spacing:1px; text-shadow:0 0 8px #0ff;
-}
-.play-button.block{ width:100%; margin-bottom:10px; font-size:14px; padding:10px 12px; }
-.controls-help{ margin-top:6px; font-size:12px; color:#0ff; opacity:.85; text-align:center; }
-
-/* =========================================================
-   HUD COMPATTA (MOBILE)
-   ========================================================= */
+/* =======================
+   MOBILE HUD (overlay)
+   ======================= */
 .mobile-hud{
   position:absolute;
-  left:50%; bottom:calc(var(--joy-size) + 42px);
-  transform:translateX(-50%);
-  width:min(94vw, 600px);
+  left:50%; top:12px; transform:translateX(-50%);
+  width:min(94vw, 620px);
   background:#111; border:2px solid #0ff;
   box-shadow:0 0 10px #0ff, inset 0 0 8px #0ff;
   border-radius:10px; padding:10px 12px;
-  display:none;
+  display:none;     /* mostrato in portrait */
+  z-index:30;
 }
 .mobile-hud .mobile-row{
   display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:4px 0;
@@ -184,21 +155,20 @@ button, .joystick .pad{
 }
 .mobile-hud .pill.danger{ background:#f33; border-color:#f33; }
 
-/* =========================================================
-   JOYSTICK (UNICO) – GRIGLIA 3×3
-   ========================================================= */
+/* =======================
+   JOYSTICK (grid 3×3)
+   ======================= */
 .joystick{
   width:var(--joy-size);
   height:var(--joy-size);
-  display:none;
+  display:none;                          /* mostrato in touch/portrait */
   grid-template-columns:repeat(3, 1fr);
   grid-template-rows:repeat(3, 1fr);
   gap:var(--joy-gap);
   pointer-events:auto;
   touch-action:none;
+  z-index:40;
 }
-
-/* celle */
 .joystick .pad{
   background:#00150f;
   border:2px solid #33ffaa;
@@ -211,15 +181,11 @@ button, .joystick .pad{
   box-shadow:0 0 12px #00ff66, inset 0 0 12px #00ff66;
   border-color:#00ff66;
 }
-
-/* posizionamento */
 .joystick .center   { grid-column:2/3; grid-row:2/3; border-radius:999px; }
 .joystick .btn-up   { grid-column:2/3; grid-row:1/2; }
 .joystick .btn-left { grid-column:1/2; grid-row:2/3; }
 .joystick .btn-right{ grid-column:3/4; grid-row:2/3; }
 .joystick .btn-down { grid-column:2/3; grid-row:3/4; }
-
-/* frecce */
 .joystick .btn-up::before,
 .joystick .btn-left::before,
 .joystick .btn-right::before,
@@ -232,77 +198,72 @@ button, .joystick .pad{
 .joystick .btn-left::before { border-width:9px 12px 9px 0;  border-color:transparent #00ff66 transparent transparent; left:20%; }
 .joystick .btn-right::before{ border-width:9px 0 9px 12px;  border-color:transparent transparent transparent #00ff66; right:20%; }
 
-/* Assicura che il joystick stia sopra il canvas quando è nello stage-center */
-.stage-center { position: relative; }
-.stage-center .joystick{
-  position: absolute;
-  left: 50%;
-  bottom: 10px;
-  transform: translateX(-50%);
-  z-index: 50;
-}
-
-
-/* =========================================================
-   RESPONSIVE BREAKPOINTS
-   ========================================================= */
-
-/* Desktop → medium */
+/* =======================
+   BREAKPOINTS
+   ======================= */
 @media (max-width: 1200px){
   .stage-rails{ grid-template-columns: 180px 1fr 180px; }
 }
-
-/* Medium → tablet */
 @media (max-width: 980px){
   .stage-rails{ grid-template-columns: 150px 1fr 150px; }
   .play-button.block{ font-size:13px; padding:8px 10px; }
 }
-
-/* Small (phone) – attiva HUD mobile + joystick (in demo-mode) */
 @media (max-width: 700px){
   .stage-rails{ grid-template-columns: 1fr; }
   .side-panel.left, .right-rail{ display:none; }
-  .demo-mode .joystick{ display:grid; }
-  .demo-mode .mobile-hud{ display:block; }
   .topbar-minimal{ padding:6px 8px; }
   .game-wrapper{ padding:10px; }
 }
 
-/* =========================================================
-   ORIENTATION RULES
-   ========================================================= */
+/* =======================
+   ORIENTATION
+   ======================= */
 
-/* Portrait: layout “solo canvas”, joystick fisso in basso */
+/* LANDSCAPE (telefono orizzontale/Tablet):
+   compattiamo laterali per evitare sovrapposizioni */
+@media (orientation: landscape){
+  .stage-rails{ grid-template-columns: 200px 1fr 200px; }
+  .side-panel, .rail{ padding:10px; }
+  .panel-title{ font-size:13px; }
+  .info-box{ padding:8px; }
+  .play-button.block{ font-size:13px; }
+}
+
+/* PORTRAIT (telefono verticale):
+   - LEVEL più piccolo
+   - HUD mobile visibile in alto
+   - joystick centrato in basso
+   - spazio extra sotto il canvas per non coprirlo
+*/
 @media (orientation: portrait){
   .side-panel.left, .right-rail{ display:none; }
   .stage-rails{ grid-template-columns: 1fr; }
 
-  /* joystick centrato in basso sopra il bordo della pagina */
+  .big-level #levelDisplay{ font-size:28px; } /* level più compatto in alto */
+
+  .mobile-hud{ display:block; }
+
   #joystick{
     position:fixed;
     left:50%; transform:translateX(-50%);
     bottom:12px; z-index:50;
+    display:grid;
   }
 
-  /* lascio spazio sotto il canvas per non coprirlo col joystick */
-  .stage-center{ padding-bottom: calc(var(--joy-size) + 24px); }
+  .stage-center{ padding-bottom: calc(var(--joy-size) + 26px); }
 }
 
-/* =========================================================
-   FOOTER
-   ========================================================= */
+/* Mostra HUD + joystick quando device è touch */
+.touch-mode .joystick{ display:grid; }
+.touch-mode .mobile-hud{ display:block; }
+
+/* Scroll/gesture */
+#joystick { touch-action:none; }
+#gameCanvas { touch-action: pan-y; }
+
+/* Footer */
 .copyright{
   text-align:center; font-size:10px; color:#0ff;
   position:relative; bottom:6px; width:100%; text-shadow:0 0 5px #0ff;
 }
 
-/* ---- Mostra HUD + joystick quando il device è touch ---- */
-.touch-mode .joystick{ display:grid; }
-.touch-mode .mobile-hud{ display:block; }
-
-/* ---- Permetti lo scroll verticale della pagina ---- */
-html, body { height:auto; overflow-y:auto; }
-
-/* ---- Evita che il joystick fissi blocchi lo scroll del resto ---- */
-#joystick { touch-action: none; }       /* il joystick cattura il drag */
-#gameCanvas { touch-action: pan-y; }    /* sul canvas puoi comunque scrollare in verticale se serve */
