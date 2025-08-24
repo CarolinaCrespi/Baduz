@@ -163,6 +163,37 @@
         });
       }
     })();
+    <script>
+  (function () {
+    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (isTouch) document.body.classList.add('touch-mode');
+
+    // === Adatta le dimensioni del canvas alla finestra (con margine per joystick) ===
+    function fitCanvas() {
+      const c = document.getElementById('gameCanvas');
+      if (!c) return;
+
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+
+      // spazio per il joystick in basso (solo su touch)
+      const joySize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--joy-size')) || 120;
+      const padBottom = isTouch ? (joySize + 24) : 0;
+
+      // limiti ragionevoli per non perdere qualità
+      const maxW = Math.min(Math.floor(W * 0.98), 1280);
+      const maxH = Math.min(Math.floor((H - padBottom) * 0.96), 800);
+
+      c.width  = maxW;
+      c.height = maxH;
+    }
+
+    fitCanvas();
+    window.addEventListener('resize', fitCanvas);
+    window.addEventListener('orientationchange', fitCanvas);
+  })();
+</script>
+
   </script>
 </body>
 </html>
