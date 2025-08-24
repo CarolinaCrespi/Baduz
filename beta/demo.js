@@ -138,6 +138,16 @@ class MazeScene extends Phaser.Scene {
     });
   }
 
+  const config = {
+  type: Phaser.CANVAS,
+  canvas: document.getElementById('gameCanvas'),
+  transparent: true,
+  physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
+  scene: MazeScene,
+  scale: { mode: Phaser.Scale.RESIZE }   // <— aggiungi questa riga
+};
+
+
   // ---------- Scene lifecycle ----------
   init(data) {
     this.currentLevel =
@@ -747,8 +757,8 @@ class MazeScene extends Phaser.Scene {
       this.isGameOver = true;
       this.cameras.main.stopFollow();
       this.cameras.main.centerOn(
-        this.game.config.width / 2,
-        this.game.config.height / 2
+        this.game..width / 2,
+        this.game..height / 2
       );
 
       const totalSeconds = Math.floor(this.totalTime / 1000);
