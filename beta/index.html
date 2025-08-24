@@ -27,7 +27,7 @@
     <p><strong>S</strong> = Save, <strong>L</strong> = Load, <strong>R</strong> = Reset</p>
     <br>
     <span style="color:#ff0000;text-shadow:0 0 5px #ff0000;font-size:12px;">
-      DESKTOP VERSION ONLY (keyboard)<br>Mobile‑ready with on‑screen joystick
+      DESKTOP VERSION ONLY (keyboard) — Mobile‑ready with on‑screen joystick
     </span>
   </div>
 
@@ -49,7 +49,7 @@
 
       <!-- 3-column stage -->
       <div class="stage-rails">
-        <!-- LEFT: Stats -->
+        <!-- LEFT: Stats (desktop) -->
         <div class="side-panel left">
           <div class="panel-title">STATS</div>
 
@@ -77,11 +77,11 @@
           </div>
         </div>
 
-        <!-- CENTRO: Canvas + HUD mobile + Joystick -->
+        <!-- CENTER: Canvas + Mobile HUD + Joystick -->
         <div class="stage-center">
           <canvas id="gameCanvas" width="1000" height="700"></canvas>
-        
-          <!-- HUD compatta per mobile -->
+
+          <!-- Mobile HUD (compare in portrait / telefono) -->
           <div id="mobileHud" class="mobile-hud" aria-hidden="true">
             <div class="mobile-row">
               <div class="chip"><span>Player</span><strong id="mPlayer">Guest</strong></div>
@@ -96,8 +96,8 @@
               <button id="btnResetM" class="pill danger">Reset</button>
             </div>
           </div>
-        
-          <!-- Joystick virtuale (UNICO) -->
+
+          <!-- Virtual Joystick (UNICO) -->
           <div id="joystick" class="joystick" aria-hidden="true">
             <button class="pad btn-up"    data-dir="up"    aria-label="Up"></button>
             <button class="pad btn-left"  data-dir="left"  aria-label="Left"></button>
@@ -107,16 +107,13 @@
           </div>
         </div>
 
-
-        <!-- RIGHT: Controls + (single) joystick -->
+        <!-- RIGHT: Controls (desktop) -->
         <aside class="rail right-rail">
           <div class="controls-title">CONTROLS</div>
           <button id="btnHint"  class="play-button block">Hint (H)</button>
           <button id="btnSave"  class="play-button block">Save (S)</button>
           <button id="btnLoad"  class="play-button block">Load (L)</button>
           <button id="btnReset" class="play-button block danger">Reset (R)</button>
-
-          <!-- Virtual Joystick (unico) -->
           <div class="controls-help">
             <p>Arrows = Move</p>
             <p>P = Pause</p>
@@ -128,71 +125,37 @@
 
   <div class="copyright">© 2025 Carolina Crespi. All rights reserved.</div>
 
-<!-- Phaser -->
-<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
-<!-- Game -->
-<script src="demo.js"></script>
+  <!-- Phaser -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+  <!-- Your game (lascia il tuo demo.js così com’è) -->
+  <script src="demo.js"></script>
 
-<!-- Script: demo-mode + Play -->
-<script>
-  (function(){
-    const params = new URLSearchParams(location.search);
-    if (params.has('demo')) {
-      document.body.classList.add('demo-mode');
-      const canvas = document.getElementById('gameCanvas');
-      if (canvas) {
-        canvas.width  = Math.floor(window.innerWidth  * 0.95);
-        canvas.height = Math.floor(window.innerHeight * 0.85);
-        // se il gioco è già istanziato, informiamo Phaser del nuovo size
-        if (window.game && game.scale) game.scale.resize(canvas.width, canvas.height);
+  <!-- Demo-mode + Play -->
+  <script>
+    (function(){
+      const params = new URLSearchParams(location.search);
+
+      if (params.has('demo')) {
+        document.body.classList.add('demo-mode');
+        const canvas = document.getElementById('gameCanvas');
+        if (canvas) {
+          canvas.width  = Math.floor(window.innerWidth  * 0.95);
+          canvas.height = Math.floor(window.innerHeight * 0.85);
+        }
       }
-    }
 
-    const playBtn = document.getElementById('playBtn');
-    if (playBtn) {
-      playBtn.addEventListener('click', () => {
-        const base = location.href.split('?')[0];
-        location.href = base + '?demo=true';
-      });
-    }
-  })();
-</script>
+      const playBtn = document.getElementById('playBtn');
+      if (playBtn) {
+        playBtn.addEventListener('click', () => {
+          const base = location.href.split('?')[0];
+          location.href = base + '?demo=true';
+        });
+      }
 
-<!-- Script: touch-mode + auto-fit canvas -->
-<script>
-  (function () {
-    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-    if (isTouch) document.body.classList.add('touch-mode');
-
-    function fitCanvas() {
-      const c = document.getElementById('gameCanvas');
-      if (!c) return;
-
-      const W = window.innerWidth;
-      const H = window.innerHeight;
-
-      // margine per joystick (se lo mostri in mobile)
-      const root = getComputedStyle(document.documentElement);
-      const joyVar = root.getPropertyValue('--joy-size').trim();
-      const joySize = parseInt(joyVar || '120', 10);
-      const padBottom = isTouch ? (joySize + 24) : 0;
-
-      const maxW = Math.min(Math.floor(W * 0.98), 1280);
-      const maxH = Math.min(Math.floor((H - padBottom) * 0.96), 800);
-
-      c.width  = maxW;
-      c.height = maxH;
-
-      // informa Phaser del nuovo size
-      if (window.game && game.scale) game.scale.resize(c.width, c.height);
-    }
-
-    fitCanvas();
-    window.addEventListener('resize', fitCanvas);
-    window.addEventListener('orientationchange', fitCanvas);
-  })();
-</script>
-
-  
+      // Aggiunge classe touch-mode per mostrare HUD/joystick
+      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+      if (isTouch) document.body.classList.add('touch-mode');
+    })();
+  </script>
 </body>
 </html>
