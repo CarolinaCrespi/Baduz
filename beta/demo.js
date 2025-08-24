@@ -662,24 +662,25 @@ const config = {
   type: Phaser.CANVAS,
   width: 1000,
   height: 700,
-  parent: 'game-root',                 // (centra nel container)
   canvas: document.getElementById('gameCanvas'),
-  transparent: true,
+  transparent: true,  
+  physics: { 
+    default: 'arcade', 
+    arcade: { gravity: { y: 0 }, debug: false } 
+  },
+  scene: MazeScene,
   scale: {
-    mode: Phaser.Scale.FIT,            // adatta a tablet/telefono
-    autoCenter: Phaser.Scale.CENTER_BOTH
-  },
-  physics: {
-    default: 'arcade',
-    arcade: { gravity: { y: 0 }, debug: false }
-  },
-  scene: MazeScene
+    mode: Phaser.Scale.FIT,         // 🔥 Adatta il canvas allo schermo
+    autoCenter: Phaser.Scale.CENTER_BOTH // 🔥 Centra orizzontalmente e verticalmente
+  }
 };
+
 const game = new Phaser.Game(config);
 
-/* ------------------ Autosave on exit ------------------ */
+// Autosave on exit
 window.addEventListener('beforeunload', () => {
   const scene = game?.scene?.keys?.['MazeScene'];
   if (scene) saveGameSnapshot(scene.getSnapshot(true));
 });
+
 
