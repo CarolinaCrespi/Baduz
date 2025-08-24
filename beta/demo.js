@@ -920,20 +920,18 @@ class MazeScene extends Phaser.Scene {
 // =========================
 const config = {
   type: Phaser.CANVAS,
-  width: 1000,
-  height: 700,
-  canvas: document.getElementById("gameCanvas"),
+  canvas: document.getElementById('gameCanvas'),
   transparent: true,
   physics: {
-    default: "arcade",
-    arcade: { gravity: { y: 0 }, debug: false },
+    default: 'arcade',
+    arcade: { gravity: { y: 0 }, debug: false }
   },
   scene: MazeScene,
+  // gestito dallo Scale Manager (si adatta al canvas)
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH
+  }
 };
 const game = new Phaser.Game(config);
 
-// Autosave on exit
-window.addEventListener("beforeunload", () => {
-  const scene = game?.scene?.keys?.["MazeScene"];
-  if (scene) saveGameSnapshot(scene.getSnapshot(true));
-});
