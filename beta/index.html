@@ -1,1 +1,133 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BADUZ</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="stile.css">
+</head>
+<body>
+  <!-- ===== HERO / LANDING ===== -->
+  <div class="game-title">BADUZ</div>
+
+  <div class="game-description">
+    Baduz is a glowing sphere determined to escape from complex mazes.<br><br>
+    Collect <span style="color:#00ffff;text-shadow:0 0 6px #00ffff;">Orbs</span> to unlock helpful hints.<br>
+    If you get lost, spend your Orbs to reveal a glowing path leading to the exit.<br><br>
+    How fast can you break free?
+  </div>
+
+  <div class="how-to-play">
+    <h2>HOW TO PLAY</h2>
+    <p>Use the <strong>arrow keys</strong> to move Baduz through the maze.</p>
+    <p>Press <strong>P</strong> to pause / resume.</p>
+    <p><strong>S</strong> = Save, <strong>L</strong> = Load, <strong>R</strong> = Reset, <strong>H</strong> = Hint</p>
+    <br>
+    <span style="color:#ff0000;text-shadow:0 0 5px #ff0000;font-size:12px;">DESKTOP VERSION ONLY (keyboard)</span><br>
+    <span style="color:#00ffcc;text-shadow:0 0 5px #00ffcc;font-size:12px;">Mobile ready with on‑screen joystick</span>
+  </div>
+
+  <div class="play-button-container">
+    <button id="playBtn" class="play-button">PLAY</button>
+  </div>
+
+  <!-- ===== GAME AREA ===== -->
+  <div class="game-container">
+    <div class="game-wrapper">
+
+      <!-- Top bar minimale: solo LEVEL (centrato) -->
+      <div class="topbar-minimal only-level">
+        <div class="info-box big-level">
+          <span>LEVEL</span>
+          <div id="levelDisplay">1</div>
+        </div>
+      </div>
+
+      <!-- Layout a 3 colonne: sinistra (stats) | center (canvas) | destra (controls) -->
+      <div class="stage-rails">
+        <!-- Colonna SINISTRA: STATS -->
+        <aside class="side-panel left">
+          <div class="panel-title">STATS</div>
+
+          <div class="info-box">
+            <span>PLAYER</span>
+            <div id="playerNameDisplay">Guest <button id="btnChangeName" class="mini-edit" aria-label="Change name">✎</button></div>
+          </div>
+
+          <div class="info-box">
+            <span>SCORE</span>
+            <div id="score">00000</div>
+          </div>
+
+          <div class="info-box">
+            <span>ORBS</span>
+            <div id="energyDisplay">0</div>
+          </div>
+
+          <div class="info-box">
+            <span>TIMER</span>
+            <div id="timer-display">00:00:00</div>
+          </div>
+        </aside>
+
+        <!-- CENTRO: Canvas -->
+        <main class="stage-center" id="game-root">
+          <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        </main>
+
+        <!-- Colonna DESTRA: CONTROLS -->
+        <aside class="rail right-rail">
+          <div class="controls-title">CONTROLS</div>
+          <button id="btnHint"  class="play-button block">Hint (H)</button>
+          <button id="btnSave"  class="play-button block">Save (S)</button>
+          <button id="btnLoad"  class="play-button block">Load (L)</button>
+          <button id="btnReset" class="play-button block danger">Reset (R)</button>
+          <div class="controls-help">
+            <p>Arrows = Move</p>
+            <p>P = Pause</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <div class="copyright">© 2025 Carolina Crespi. All rights reserved.</div>
+
+  <!-- ===== MOBILE D-PAD (joystick virtuale) ===== -->
+  <div id="dpad" class="dpad" aria-hidden="true">
+    <div class="dpad-grid">
+      <button class="dpad-btn up"    data-dir="up"    aria-label="Up">▲</button>
+      <div class="spacer"></div>
+      <button class="dpad-btn right" data-dir="right" aria-label="Right">▶</button>
+
+      <button class="dpad-btn left"  data-dir="left"  aria-label="Left">◀</button>
+      <button class="dpad-btn center" data-dir="center" aria-label="Center">◎</button>
+      <button class="dpad-btn down"  data-dir="down"  aria-label="Down">▼</button>
+    </div>
+  </div>
+
+  <!-- Phaser -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+  <!-- Game -->
+  <script src="demo.js"></script>
+
+  <!-- Landing → Demo mode toggle -->
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+      if (params.has('demo')) {
+        document.body.classList.add('demo-mode');
+      }
+      const playBtn = document.getElementById('playBtn');
+      if (playBtn) {
+        playBtn.addEventListener('click', () => {
+          const base = location.href.split('?')[0];
+          location.href = base + '?demo=true';
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
 
