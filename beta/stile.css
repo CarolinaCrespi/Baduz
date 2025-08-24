@@ -267,3 +267,13 @@ body::after{
   position:relative; bottom:6px; width:100%; text-shadow:0 0 5px #0ff;
 }
 
+/* Di base nascosto */
+.joystick{ display:none; }
+
+/* Lo mostro SOLO su device touch */
+.touch-mode .joystick{ display:grid; }
+
+/* …ma mai su desktop/laptop (mouse/trackpad) */
+@media (hover: hover) and (pointer: fine){
+  .joystick{ display:none !important; }
+}
