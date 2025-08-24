@@ -105,7 +105,16 @@
           <button id="btnSave"  class="play-button block">Save (S)</button>
           <button id="btnLoad"  class="play-button block">Load (L)</button>
           <button id="btnReset" class="play-button block danger">Reset (R)</button>
-          <div class="controls-help">
+          <div class="controls-help">            
+          <div id="joystick" class="joystick">
+            <button class="joy up"    aria-label="Up">▲</button>
+            <div class="joy-row">
+              <button class="joy left"  aria-label="Left">◀</button>
+              <div class="joy-center" aria-hidden="true"></div>
+              <button class="joy right" aria-label="Right">▶</button>
+            </div>
+            <button class="joy down"  aria-label="Down">▼</button>
+          </div>            
             <p>Arrows = Move</p>
             <p>P = Pause</p>
           </div>
