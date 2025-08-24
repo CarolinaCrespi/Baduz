@@ -128,39 +128,42 @@
 
   <div class="copyright">© 2025 Carolina Crespi. All rights reserved.</div>
 
-  <!-- Phaser -->
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
-  <!-- Game -->
-  <script src="demo.js"></script>
+<!-- Phaser -->
+<script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+<!-- Game -->
+<script src="demo.js"></script>
 
-  <!-- Demo-mode + Play -->
-  <script>
-    (function(){
-      const params = new URLSearchParams(location.search);
-
-      if (params.has('demo')) {
-        document.body.classList.add('demo-mode');
-        const canvas = document.getElementById('gameCanvas');
-        if (canvas) {
-          canvas.width  = Math.floor(window.innerWidth  * 0.95);
-          canvas.height = Math.floor(window.innerHeight * 0.85);
-        }
+<!-- Script: demo-mode + Play -->
+<script>
+  (function(){
+    const params = new URLSearchParams(location.search);
+    if (params.has('demo')) {
+      document.body.classList.add('demo-mode');
+      const canvas = document.getElementById('gameCanvas');
+      if (canvas) {
+        canvas.width  = Math.floor(window.innerWidth  * 0.95);
+        canvas.height = Math.floor(window.innerHeight * 0.85);
+        // se il gioco è già istanziato, informiamo Phaser del nuovo size
+        if (window.game && game.scale) game.scale.resize(canvas.width, canvas.height);
       }
+    }
 
-      const playBtn = document.getElementById('playBtn');
-      if (playBtn) {
-        playBtn.addEventListener('click', () => {
-          const base = location.href.split('?')[0];
-          location.href = base + '?demo=true';
-        });
-      }
-    })();
-    <script>
+    const playBtn = document.getElementById('playBtn');
+    if (playBtn) {
+      playBtn.addEventListener('click', () => {
+        const base = location.href.split('?')[0];
+        location.href = base + '?demo=true';
+      });
+    }
+  })();
+</script>
+
+<!-- Script: touch-mode + auto-fit canvas -->
+<script>
   (function () {
     const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     if (isTouch) document.body.classList.add('touch-mode');
 
-    // === Adatta le dimensioni del canvas alla finestra (con margine per joystick) ===
     function fitCanvas() {
       const c = document.getElementById('gameCanvas');
       if (!c) return;
@@ -168,16 +171,20 @@
       const W = window.innerWidth;
       const H = window.innerHeight;
 
-      // spazio per il joystick in basso (solo su touch)
-      const joySize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--joy-size')) || 120;
+      // margine per joystick (se lo mostri in mobile)
+      const root = getComputedStyle(document.documentElement);
+      const joyVar = root.getPropertyValue('--joy-size').trim();
+      const joySize = parseInt(joyVar || '120', 10);
       const padBottom = isTouch ? (joySize + 24) : 0;
 
-      // limiti ragionevoli per non perdere qualità
       const maxW = Math.min(Math.floor(W * 0.98), 1280);
       const maxH = Math.min(Math.floor((H - padBottom) * 0.96), 800);
 
       c.width  = maxW;
       c.height = maxH;
+
+      // informa Phaser del nuovo size
+      if (window.game && game.scale) game.scale.resize(c.width, c.height);
     }
 
     fitCanvas();
@@ -186,6 +193,6 @@
   })();
 </script>
 
-  </script>
+  
 </body>
 </html>
