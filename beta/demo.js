@@ -939,3 +939,7 @@ const config = {
 
 const game = new Phaser.Game(config);
 
+(function () {
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  document.body.classList.toggle('touch-mode', isTouch);
+})();
