@@ -200,6 +200,46 @@ export default class MazeScene extends Phaser.Scene{
     return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${ss.toString().padStart(2,'0')}`;
   }
 
+  findPath(){
+  const size  = this.mazeLayout.length;
+  const start = {
+    x: Math.floor(this.ant.x / this.tileSize),
+    y: Math.floor(this.ant.y / this.tileSize)
+  };
+  const end   = this.exit;            // {x, y} settato in create()
+  const dirs  = [[1,0],[-1,0],[0,1],[0,-1]];
+
+  const key = (x,y)=> `${x},${y}`;
+  const q = [start];
+  const seen = new Set([key(start.x, start.y)]);
+  const prev = {};
+
+  while (q.length){
+    const c = q.shift();
+    if (c.x === end.x && c.y === end.y){
+      // ricostruisci path
+      const path = [];
+      let cur = c;
+      while (cur){
+        path.unshift(cur);
+        cur = prev[key(cur.x, cur.y)];
+      }
+      return path;
+    }
+    for (const [dx,dy] of dirs){
+      const nx = c.x + dx, ny = c.y + dy;
+      if (nx>=0 && ny>=0 && nx<size && ny<size &&
+          this.mazeLayout[ny][nx] === 1 && !seen.has(key(nx,ny))){
+        seen.add(key(nx,ny));
+        prev[key(nx,ny)] = c;
+        q.push({x:nx, y:ny});
+      }
+    }
+  }
+  return null; // nessun percorso
+}
+
+
   useHint(){
   if (this.coins < HINT_COST){
     this.showToast("Not enough orbs!", "#ffcc00");
