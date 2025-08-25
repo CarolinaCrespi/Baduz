@@ -97,21 +97,55 @@ export default class MazeScene extends Phaser.Scene{
     this.physics.add.existing(exitZone, true);
     this.physics.add.overlap(this.ant, exitZone, this.nextLevel, null, this);
 
-    // orbs
-    this.energyGroup = this.physics.add.group();
-    const rng = mulberry32((this.rngSeed>>>0) + 999);
-    const orbsCount = Math.max(3, 3 + Math.floor(this.currentLevel / 2));
-    let placed=0;
-    while(placed < orbsCount){
-      const rx = Math.floor(rng()*size), ry = Math.floor(rng()*size);
-      if (this.mazeLayout[ry][rx]===1 && !(rx===this.entrance.x && ry===this.entrance.y)){
-        const px=rx*this.tileSize+this.tileSize/2, py=ry*this.tileSize+this.tileSize/2;
-        const orb = this.add.circle(px,py,6,0x00ff66).setStrokeStyle(2,0x33ffaa,1);
-        this.physics.add.existing(orb); orb.body.setCircle(6); orb.body.setImmovable(true);
-        this.energyGroup.add(orb);
-        placed++;
-      }
-    }
+    // orbs (collectibles) con glow "breathing"
+this.energyGroup = this.physics.add.group();
+const rng = mulberry32((this.rngSeed>>>0) + 999);
+const orbsCount = Math.max(3, 3 + Math.floor(this.currentLevel / 2));
+let placed = 0;
+
+while (placed < orbsCount){
+  const rx = Math.floor(rng() * size);
+  const ry = Math.floor(rng() * size);
+
+  if (this.mazeLayout[ry][rx] === 1 && !(rx === this.entrance.x && ry === this.entrance.y)){
+    const px = rx * this.tileSize + this.tileSize/2;
+    const py = ry * this.tileSize + this.tileSize/2;
+
+    // sfera principale
+    const FILL_COLOR   = 0x00ff66;
+    const STROKE_COLOR = 0x33ffaa;
+
+    const orb = this.add.circle(px, py, 6, FILL_COLOR);
+    orb.setStrokeStyle(2, STROKE_COLOR, 1);
+    orb.setDepth(10);
+
+    this.physics.add.existing(orb);
+    orb.body.setCircle(6);
+    orb.body.setImmovable(true);
+    this.energyGroup.add(orb);
+
+    // alone "breathing" (dietro l’orb)
+    const pulse = this.add.circle(px, py, 8, FILL_COLOR, 0.25);
+    pulse.setDepth(orb.depth - 1);
+    orb.pulse = pulse;
+
+    // tween che pulsa: scala ↑ e svanisce, poi riparte
+    orb.pulseTween = this.tweens.add({
+      targets: pulse,
+      scale: 1.8,
+      alpha: 0,
+      duration: 1200,
+      ease: 'Sine.out',
+      yoyo: false,
+      repeat: -1,
+      onRepeat: () => { pulse.setScale(1); pulse.setAlpha(0.25); }
+    });
+
+    placed++;
+  }
+}
+
+    
     this.physics.add.overlap(this.ant, this.energyGroup, (_ant, orb)=>{
       orb.destroy(); this.coins++; this.showToast('+1 Orb','#00ffff'); this.updateHUD();
     }, null, this);
