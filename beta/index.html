@@ -2,62 +2,68 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>BADUZ</title>
 
-  <!-- Font & CSS -->
+  <!-- Font + Stili -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="stile.css">
 </head>
 <body>
-  <!-- Hero -->
-  <div class="game-title">BADUZ</div>
+  <!-- =========================
+       HEADER 
+       ========================= -->
+  <header>
+    <h1 class="game-title">BADUZ</h1>
 
-  <div class="game-description">
-    Baduz is a glowing sphere determined to escape from complex mazes.<br><br>
-    Collect <span style="color:#00ffff;text-shadow:0 0 6px #00ffff;">Orbs</span> to unlock helpful hints.<br>
-    If you get lost, spend your Orbs to reveal a glowing path leading to the exit.<br><br>
-    How fast can you break free?
-  </div>
+    <p class="game-description">
+      Baduz is a glowing sphere determined to escape from complex mazes.<br><br>
+      Collect <span class="accent-orb">Orbs</span> to unlock helpful hints.<br>
+      If you get lost, spend your Orbs to reveal a glowing path leading to the exit.<br><br>
+      How fast can you break free?
+    </p>
 
-  <div class="how-to-play">
-    <h2>HOW TO PLAY</h2>
-    <p>Use the <strong>arrow keys</strong> to move Baduz through the maze.</p>
-    <p>Press <strong>P</strong> to pause / resume.</p>
-    <p><strong>S</strong> = Save, <strong>L</strong> = Load, <strong>R</strong> = Reset</p>
-    <br>
-    <span style="color:#ff0000;text-shadow:0 0 5px #ff0000;font-size:12px;">
-      DESKTOP VERSION ONLY (keyboard) — Mobile‑ready with on‑screen joystick
-    </span>
-  </div>
+    <!-- Guida rapida -->
+    <section class="how-to-play" aria-labelledby="how-to-play-title">
+      <h2 id="how-to-play-title">HOW TO PLAY</h2>
+      <p>Use the <strong>arrow keys</strong> to move Baduz through the maze.</p>
+      <p>Press <strong>P</strong> to pause / resume.</p>
+      <p><strong>S</strong> = Save, <strong>L</strong> = Load, <strong>R</strong> = Reset</p>
+      <br>
+      <span class="desktop-only-badge">DESKTOP VERSION ONLY</span>
+    </section>
 
-  <div class="play-button-container">
-    <button id="playBtn" class="play-button">PLAY</button>
-  </div>
+    <!-- Pulsante PLAY -->
+    <div class="play-button-container">
+      <button id="playBtn" class="play-button" aria-label="Play Baduz">PLAY</button>
+    </div>
+  </header>
 
-  <!-- GAME -->
-  <div class="game-container">
+  <!-- =========================
+       AREA DI GIOCO
+       ========================= -->
+  <main class="game-container" role="main">
     <div class="game-wrapper">
-
-      <!-- Top bar: only level -->
-      <div class="topbar-minimal only-level">
+      <!-- TOP BAR: solo livello al centro -->
+      <div class="topbar-minimal only-level" role="region" aria-label="Level">
         <div class="info-box big-level">
           <span>LEVEL</span>
           <div id="levelDisplay">1</div>
         </div>
       </div>
 
-      <!-- 3-column stage -->
+      <!-- LAYOUT 3 COLONNE: sinistra (stats) | centro (canvas) | destra (controls) -->
       <div class="stage-rails">
-        <!-- LEFT: Stats (desktop) -->
-        <div class="side-panel left">
+        <!-- SINISTRA: STATS -->
+        <aside class="side-panel left" aria-label="Stats">
           <div class="panel-title">STATS</div>
 
           <div class="info-box">
             <span>PLAYER</span>
             <div id="playerNameDisplay">
-              Guest
-              <button id="btnChangeName" class="mini-edit" title="Change name">✎</button>
+              Carolina
+              <button id="btnChangeName" class="mini-edit" aria-label="Change nickname">✎</button>
             </div>
           </div>
 
@@ -68,82 +74,67 @@
 
           <div class="info-box">
             <span>ORBS</span>
-            <div id="energyDisplay">0</div>
+            <div id="orbsDisplay">0</div>
           </div>
 
           <div class="info-box">
             <span>TIMER</span>
             <div id="timer-display">00:00:00</div>
           </div>
-        </div>
+        </aside>
 
-        <!-- CENTER: Canvas + Mobile HUD + Joystick -->
-        <div class="stage-center">
+        <!-- CENTRO: CANVAS -->
+        <section class="stage-center" aria-label="Game canvas">
           <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        </section>
 
-          <!-- Mobile HUD (compare in portrait / telefono) -->
-          <div id="mobileHud" class="mobile-hud" aria-hidden="true">
-            <div class="mobile-row">
-              <div class="chip"><span>Player</span><strong id="mPlayer">Guest</strong></div>
-              <div class="chip"><span>Score</span><strong id="mScore">00000</strong></div>
-              <div class="chip"><span>Orbs</span><strong id="mOrbs">0</strong></div>
-              <div class="chip"><span>Timer</span><strong id="mTimer">00:00:00</strong></div>
-            </div>
-            <div class="mobile-row">
-              <button id="btnHintM"  class="pill">Hint</button>
-              <button id="btnSaveM"  class="pill">Save</button>
-              <button id="btnLoadM"  class="pill">Load</button>
-              <button id="btnResetM" class="pill danger">Reset</button>
-            </div>
-          </div>
-
-          <!-- Virtual Joystick (UNICO) -->
-          <div id="joystick" class="joystick" aria-hidden="true">
-            <button class="pad btn-up"    data-dir="up"    aria-label="Up"></button>
-            <button class="pad btn-left"  data-dir="left"  aria-label="Left"></button>
-            <div    class="pad center"    aria-hidden="true"></div>
-            <button class="pad btn-right" data-dir="right" aria-label="Right"></button>
-            <button class="pad btn-down"  data-dir="down"  aria-label="Down"></button>
-          </div>
-        </div>
-
-        <!-- RIGHT: Controls (desktop) -->
-        <aside class="rail right-rail">
+        <!-- DESTRA: CONTROLLI -->
+        <aside class="rail right-rail" aria-label="Controls">
           <div class="controls-title">CONTROLS</div>
-          <button id="btnHint"  class="play-button block">Hint (H)</button>
-          <button id="btnSave"  class="play-button block">Save (S)</button>
-          <button id="btnLoad"  class="play-button block">Load (L)</button>
-          <button id="btnReset" class="play-button block danger">Reset (R)</button>
-          <div class="controls-help">
+          <button id="btnHint"  class="play-button block"  aria-label="Use hint (H)">Hint (H)</button>
+          <button id="btnSave"  class="play-button block"  aria-label="Save (S)">Save (S)</button>
+          <button id="btnLoad"  class="play-button block"  aria-label="Load (L)">Load (L)</button>
+          <button id="btnReset" class="play-button block danger" aria-label="Reset level (R)">Reset (R)</button>
+          <div class="controls-help" aria-hidden="true">
             <p>Arrows = Move</p>
             <p>P = Pause</p>
           </div>
         </aside>
       </div>
     </div>
-  </div>
+  </main>
 
-  <div class="copyright">© 2025 Carolina Crespi. All rights reserved.</div>
+  <!-- =========================
+       FOOTER
+       ========================= -->
+  <footer class="copyright">
+    © 2025 Carolina Crespi. All rights reserved.
+  </footer>
 
+  <!-- =========================
+       SCRIPTS
+       ========================= -->
   <!-- Phaser -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
-  <!-- Your game (lascia il tuo demo.js così com’è) -->
+  <!-- Gioco -->
   <script src="demo.js"></script>
 
-  <!-- Demo-mode + Play -->
+  <!-- Demo mode + bottone PLAY -->
   <script>
-    (function(){
+    (function () {
       const params = new URLSearchParams(location.search);
 
+      // Modalità demo: nasconde l’header e massimizza il canvas
       if (params.has('demo')) {
         document.body.classList.add('demo-mode');
         const canvas = document.getElementById('gameCanvas');
         if (canvas) {
-          canvas.width  = Math.floor(window.innerWidth  * 0.95);
+          canvas.width  = Math.floor(window.innerWidth * 0.95);
           canvas.height = Math.floor(window.innerHeight * 0.85);
         }
       }
 
+      // PLAY ricarica la stessa pagina con ?demo=true
       const playBtn = document.getElementById('playBtn');
       if (playBtn) {
         playBtn.addEventListener('click', () => {
@@ -151,10 +142,6 @@
           location.href = base + '?demo=true';
         });
       }
-
-      // Aggiunge classe touch-mode per mostrare HUD/joystick
-      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-      if (isTouch) document.body.classList.add('touch-mode');
     })();
   </script>
 </body>
