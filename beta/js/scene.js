@@ -146,9 +146,17 @@ while (placed < orbsCount){
 }
 
     
-    this.physics.add.overlap(this.ant, this.energyGroup, (_ant, orb)=>{
-      orb.destroy(); this.coins++; this.showToast('+1 Orb','#00ffff'); this.updateHUD();
-    }, null, this);
+    this.physics.add.overlap(this.ant, this.energyGroup, (_ant, orb) => {
+  // stop + cleanup del glow
+  if (orb.pulseTween) { orb.pulseTween.stop(); }
+  if (orb.pulse && orb.pulse.destroy) { orb.pulse.destroy(); }
+
+  orb.destroy();
+  this.coins++;
+  this.showToast('+1 Orb', '#00ffff');
+  this.updateHUD();
+}, null, this);
+
 
     // timer
     this.antStartPos = { x:startPos.x, y:startPos.y };
