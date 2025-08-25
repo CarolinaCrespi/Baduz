@@ -201,14 +201,21 @@ export default class MazeScene extends Phaser.Scene{
   }
 
   useHint(){
-    if (this.coins < HINT_COST){ this.showToast("Not enough orbs!", "#ffcc00"); return; }
-    this.coins--; this.updateHUD();
-    // semplice highlight diretto da player a exit (dimostrativo: puoi reinserire il BFS path se vuoi)
-    const glow = this.add.graphics().lineStyle(4, 0x00ff99, 0.9);
-    glow.strokeCircle(this.ant.x, this.ant.y, 16);
-    this.tweens.add({ targets: glow, alpha:0, duration:1500, onComplete:()=>glow.destroy() });
-    this.showToast("Hint used!", "#00ffff");
+  if (this.coins < HINT_COST){
+    this.showToast("Not enough orbs!", "#ffcc00");
+    return;
   }
+  this.coins -= HINT_COST;
+  this.updateHUD();
+
+  // Effetto rapido (puoi rimettere il path BFS quando vuoi)
+  const glow = this.add.graphics().lineStyle(4, 0x00ff99, 0.9);
+  glow.strokeCircle(this.ant.x, this.ant.y, 16);
+  this.tweens.add({ targets: glow, alpha: 0, duration: 1500, onComplete: () => glow.destroy() });
+
+  this.showToast("Hint used!", "#00ffff");
+}
+
 
   getSnapshot(full=false){
     const elapsed = this.timerStarted ? (Date.now()-this.startTime) : 0;
