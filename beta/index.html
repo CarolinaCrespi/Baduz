@@ -130,11 +130,6 @@
       // Modalità demo: nasconde l’header e massimizza il canvas
       if (params.has('demo')) {
         document.body.classList.add('demo-mode');
-        const canvas = document.getElementById('gameCanvas');
-        if (canvas) {
-          canvas.width  = Math.floor(window.innerWidth * 0.95);
-          canvas.height = Math.floor(window.innerHeight * 0.85);
-        }
       }
 
       // PLAY ricarica la stessa pagina con ?demo=true
