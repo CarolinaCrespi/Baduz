@@ -277,3 +277,57 @@ body::after{
 @media (hover: hover) and (pointer: fine){
   .joystick{ display:none !important; }
 }
+
+@media (min-width: 701px){
+  .stage-rails{ grid-template-columns: 220px 1fr 220px; }
+  .side-panel.left, .right-rail{ display:block; }   /* stats + bottoni sempre visibili */
+  .mobile-hud{ display:none !important; }           /* niente HUD mobile su desktop */
+}
+
+/* Phone */
+@media (max-width: 700px){
+  .stage-rails{ grid-template-columns: 1fr; }
+  .side-panel.left, .right-rail{ display:none; }    /* nascondo colonne laterali */
+  .touch-mode .mobile-hud{ display:block; }
+  .touch-mode .joystick{ display:grid; }
+
+  /* titolo livello più piccolo */
+  .big-level #levelDisplay{ font-size: 28px; text-shadow:0 0 12px #0ff, 0 0 16px #f0f; }
+  .topbar-minimal{ padding:6px 10px; margin-bottom:8px; }
+
+  /* HUD “sticky” in alto e più leggero */
+  .mobile-hud{
+    position: sticky; top:6px; bottom:auto; transform:translateX(-50%);
+    padding:8px 10px;
+  }
+  .mobile-hud .chip{ min-width:90px; padding:4px 6px; }
+  .mobile-hud .chip strong{ font-size:13px; }
+
+  /* bottoni HUD più trasparenti */
+  .mobile-hud .pill{
+    background: rgba(0,255,0,.75);
+    border: 2px solid rgba(0,255,0,.85);
+    box-shadow: 0 0 6px rgba(0,255,0,.7);
+  }
+  .mobile-hud .pill.danger{
+    background: rgba(255,51,51,.78);
+    border-color: rgba(255,51,51,.85);
+    box-shadow: 0 0 6px rgba(255,51,51,.7);
+  }
+}
+
+/* Joystick un po’ più “soft” */
+.joystick .pad{
+  background: rgba(0,20,15,.35);
+  border: 2px solid rgba(51,255,170,.8);
+  box-shadow: 0 0 6px rgba(51,255,170,.6), inset 0 0 6px rgba(51,255,170,.55);
+}
+
+/* In landscape: lo fisso in basso a destra */
+@media (orientation: landscape){
+  .touch-mode #joystick{ position:fixed; right:12px; bottom:12px; z-index:50; }
+}
+
+/* Scroll sempre possibile */
+html, body { overflow-y:auto; }
+#gameCanvas { touch-action: pan-y; }
