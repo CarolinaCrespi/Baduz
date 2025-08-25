@@ -2,12 +2,12 @@ import MazeScene from './scene.js';
 import { saveGameSnapshot } from './storage.js';
 
 const game = new Phaser.Game({
-  type: Phaser.CANVAS,
+  type: Phaser.AUTO,               // <— AUTO invece di CANVAS
   width: 1000,
   height: 700,
   canvas: document.getElementById('gameCanvas'),
   transparent: true,
-  physics: { default:'arcade', arcade:{ gravity:{ y:0 }, debug:false } },
+  physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
   scene: MazeScene
 });
 
