@@ -205,16 +205,39 @@ export default class MazeScene extends Phaser.Scene{
     this.showToast("Not enough orbs!", "#ffcc00");
     return;
   }
+
+  const path = this.findPath();              // ← calcola il percorso
+  if (!path){
+    this.showToast("No path found!", "#ff4444");
+    return;
+  }
+
+  // scala il costo e aggiorna l'HUD
   this.coins -= HINT_COST;
   this.updateHUD();
 
-  // Effetto rapido (puoi rimettere il path BFS quando vuoi)
-  const glow = this.add.graphics().lineStyle(4, 0x00ff99, 0.9);
-  glow.strokeCircle(this.ant.x, this.ant.y, 16);
-  this.tweens.add({ targets: glow, alpha: 0, duration: 1500, onComplete: () => glow.destroy() });
+  // Disegno effetto "glow" multistrato lungo il path
+  const glowColors = [0x33ffaa, 0x00ff66, 0x00ff66];
+  const glowWidths = [10, 6, 3];
+  const glowAlphas = [0.15, 0.35, 0.9];
+
+  for (let i = 0; i < glowColors.length; i++){
+    const g = this.add.graphics();
+    g.lineStyle(glowWidths[i], glowColors[i], glowAlphas[i]);
+    g.beginPath();
+    path.forEach((p, j) => {
+      const x = p.x * this.tileSize + this.tileSize/2;
+      const y = p.y * this.tileSize + this.tileSize/2;
+      if (j === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    });
+    g.strokePath();
+    // dissolve del glow
+    this.tweens.add({ targets: g, alpha: 0, duration: 3000, onComplete: () => g.destroy() });
+  }
 
   this.showToast("Hint used!", "#00ffff");
 }
+
 
 
   getSnapshot(full=false){
