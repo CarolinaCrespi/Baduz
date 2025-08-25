@@ -1,69 +1,97 @@
-/* =======================
-   BASE / THEME
-   ======================= */
-* { margin:0; padding:0; box-sizing:border-box; }
+/* =========================
+   RESET & BASE
+   ========================= */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root{
-  /* Joystick sizing variables */
-  --joy-size: 118px;     /* diametro del pad */
-  --joy-gap:   10px;     /* spazio tra i tasti */
+  /* Palette neon */
+  --cyan:#0ff; --magenta:#f0f; --lime:#0f0; --violet:#90f; --red:#f33;
+  --bg-dark:#0a0a0a; --panel-bg:#111;
 }
-
-html, body { height:auto; overflow-y:auto; }  /* permette lo scroll */
 
 body{
-  background-color:#0a0a0a;
+  background-color:var(--bg-dark);
   font-family:'Press Start 2P', cursive;
-  color:#0ff;
+  color:var(--cyan);
   position:relative;
 }
+
+/* Griglia scanline */
 body::after{
   content:""; position:fixed; inset:0;
-  background:repeating-linear-gradient(
-    0deg, rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 1px,
-          transparent 1px, transparent 2px);
+  background:repeating-linear-gradient(0deg,
+    rgba(0,0,0,.15) 0px, rgba(0,0,0,.15) 1px,
+    transparent 1px, transparent 2px);
   pointer-events:none; z-index:999;
 }
 
-/* Matita nickname */
-.mini-edit{
-  background:none; border:none; color:#0ff; font-size:12px; margin-left:6px; cursor:pointer;
-  text-shadow:0 0 5px #0ff;
-}
-.mini-edit:hover{ color:#fff; text-shadow:0 0 8px #fff; }
-
-/* =======================
-   HOME / HERO
-   ======================= */
+/* =========================
+   TIPOGRAFIA
+   ========================= */
 .game-title{
-  text-align:center; font-size:60px; color:#0ff;
-  text-shadow:0 0 30px #f0f, 0 0 20px #f0f, 0 0 30px #f0f;
+  text-align:center; font-size:60px; color:var(--cyan);
+  text-shadow:0 0 30px var(--magenta), 0 0 20px var(--magenta), 0 0 30px var(--magenta);
   margin-top:20px; letter-spacing:2px; text-transform:uppercase;
 }
 .game-description{
-  text-align:center; font-size:30px; color:#0ff;
-  margin-top:10px; margin-bottom:20px; text-shadow:0 0 5px #0ff;
+  text-align:center; font-size:30px; color:var(--cyan);
+  margin:10px 0 20px; text-shadow:0 0 5px var(--cyan);
 }
 .how-to-play{
-  text-align:center; font-size:18px; color:#0ff; padding:15px;
-  border:2px solid #0ff; box-shadow:0 0 10px #0ff; width:60%; margin:20px auto;
+  text-align:center; font-size:18px; color:var(--cyan); margin-top:20px; padding:15px;
+  border:2px solid var(--cyan); box-shadow:0 0 10px var(--cyan);
+  width:60%; margin-left:auto; margin-right:auto;
 }
-.how-to-play h2{ font-size:24px; text-shadow:0 0 10px #0ff; margin-bottom:10px; }
+.how-to-play h2{ font-size:24px; text-shadow:0 0 10px var(--cyan); margin-bottom:10px; }
 .how-to-play p{ margin:5px 0; }
+.desktop-only-badge{ color:red; text-shadow:0 0 5px red; font-size:12px; }
+.accent-orb{ color:var(--cyan); text-shadow:0 0 6px var(--cyan); }
 
+/* =========================
+   LAYOUT GIOCO
+   ========================= */
+.game-container{
+  display:none; justify-content:center; align-items:center;
+  min-height:100vh; padding:20px; flex-direction:column;
+}
+.game-wrapper{
+  position:relative; border:4px solid var(--cyan); border-radius:8px;
+  box-shadow:0 0 15px var(--cyan), inset 0 0 15px var(--cyan);
+  background-color:transparent; padding:20px;
+}
+#gameCanvas{
+  border:2px solid var(--magenta);
+  box-shadow:0 0 20px var(--magenta), inset 0 0 10px var(--magenta);
+}
+
+/* =========================
+   INFO PANEL / BOXES
+   ========================= */
+.info-panel{
+  display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  margin-bottom:20px; padding:10px; background-color:var(--panel-bg);
+  border:2px solid var(--violet); box-shadow:0 0 10px var(--violet);
+}
+.info-box{ text-align:center; padding:10px; }
+.info-box span{ display:block; margin-bottom:5px; color:var(--cyan); text-shadow:0 0 10px var(--cyan); }
+
+/* =========================
+   BOTTONI
+   ========================= */
 .play-button-container{ text-align:center; margin:50px 0; }
 .play-button{
-  padding:15px 30px; background:#0f0; border:2px solid #0f0; color:#000;
+  padding:15px 30px; background:var(--lime); border:2px solid var(--lime); color:#000;
   font-family:'Press Start 2P', cursive; cursor:pointer; transition:all .3s;
-  box-shadow:0 0 10px #0f0; text-transform:uppercase; font-size:24px;
+  box-shadow:0 0 10px var(--lime); text-transform:uppercase; font-size:24px;
 }
-.play-button:hover{ background:#000; color:#0f0; transform:scale(1.05); }
+.play-button:hover{ background:#000; color:var(--lime); transform:scale(1.05); }
+.play-button.mini{ font-size:12px; padding:8px 12px; }
+.play-button.danger{ background:var(--red); border-color:var(--red); color:#000; }
 .play-button.block{ width:100%; margin-bottom:10px; font-size:14px; padding:10px 12px; }
-.play-button.danger{ background:#f33; border-color:#f33; color:#000; }
 
-/* =======================
+/* =========================
    DEMO MODE
-   ======================= */
+   ========================= */
 .demo-mode .game-title,
 .demo-mode .game-description,
 .demo-mode .play-button-container,
@@ -71,263 +99,80 @@ body::after{
 .demo-mode .game-container{ display:flex; min-height:100vh; padding:0; }
 .demo-mode .game-wrapper{ border:none; box-shadow:none; padding:0; }
 
-/* =======================
-   GAME WRAPPER / CANVAS
-   ======================= */
-.game-container{ display:none; justify-content:center; align-items:center; min-height:100vh; padding:20px; flex-direction:column; }
-
-.game-wrapper{
-  position:relative;
-  border:4px solid #0ff; border-radius:8px;
-  box-shadow:0 0 15px #0ff, inset 0 0 15px #0ff;
-  background-color:transparent;
-  padding:20px;
+/* =========================
+   FOOTER
+   ========================= */
+.copyright{
+  text-align:center; font-size:10px; color:var(--cyan);
+  position:relative; bottom:6px; width:100%; text-shadow:0 0 5px var(--cyan);
 }
 
-#gameCanvas{
-  border:2px solid #f0f;
-  box-shadow:0 0 20px #f0f, inset 0 0 10px #f0f;
-}
-
-/* =======================
-   TOP BAR (LEVEL)
-   ======================= */
+/* =========================
+   TOPBAR MINIMALE
+   ========================= */
 .topbar-minimal{
-  display:grid; grid-template-columns:auto; gap:28px; align-items:center; justify-content:center;
-  margin-bottom:14px; padding:10px; background:#111; border:2px solid #90f; box-shadow:0 0 10px #90f;
+  display:grid; grid-template-columns:repeat(2,auto); gap:28px; align-items:center; justify-content:center;
+  margin-bottom:14px; padding:10px; background:var(--panel-bg); border:2px solid var(--violet); box-shadow:0 0 10px var(--violet);
 }
-.topbar-minimal.only-level{ display:grid; grid-template-columns:auto; justify-content:center; padding:12px 16px; }
-.big-level span{ font-size:18px; letter-spacing:2px; text-shadow:0 0 10px #0ff; }
+.topbar-minimal.only-level{ grid-template-columns:auto; justify-content:center; padding:12px 16px; }
+.big-level span{ font-size:18px; letter-spacing:2px; text-shadow:0 0 10px var(--cyan); }
 .big-level #levelDisplay{
-  font-size:40px; line-height:1; margin-top:4px; color:#0ff;
-  text-shadow:0 0 18px #0ff, 0 0 28px #f0f;
+  font-size:40px; line-height:1; margin-top:4px; color:var(--cyan);
+  text-shadow:0 0 18px var(--cyan), 0 0 28px var(--magenta);
 }
 
-/* =======================
-   3-COLUMN LAYOUT (desktop)
-   ======================= */
-.stage-rails{
-  display:grid; grid-template-columns:220px 1fr 220px; gap:16px; align-items:start;
-}
-.rail{
-  background:#111; border:2px solid #0ff; box-shadow:0 0 10px #0ff, inset 0 0 8px #0ff;
-  border-radius:8px; padding:12px;
-}
+/* =========================
+   SIDE PANELS
+   ========================= */
 .side-panel{
-  background-color:#111; border:2px solid #0ff; box-shadow:0 0 12px #0ff;
+  background-color:var(--panel-bg); border:2px solid var(--cyan); box-shadow:0 0 12px var(--cyan);
   padding:10px; border-radius:8px; width:210px;
 }
 .side-panel.left{ text-align:center; }
 .panel-title{
-  text-align:center; font-size:14px; color:#0ff; margin-bottom:8px; text-shadow:0 0 10px #0ff;
-  border-bottom:1px solid #0ff; padding-bottom:4px;
+  text-align:center; font-size:14px; color:var(--cyan); margin-bottom:8px; text-shadow:0 0 10px var(--cyan);
+  border-bottom:1px solid var(--cyan); padding-bottom:4px;
 }
-.info-box{ text-align:center; padding:10px; }
-.info-box span{ display:block; margin-bottom:5px; color:#0ff; text-shadow:0 0 10px #0ff; }
+
+/* =========================
+   STAGE LAYOUT
+   ========================= */
+.stage-rails{
+  display:grid; grid-template-columns:220px 1fr 220px; gap:16px; align-items:start;
+}
+.rail{
+  background:var(--panel-bg); border:2px solid var(--cyan);
+  box-shadow:0 0 10px var(--cyan), inset 0 0 8px var(--cyan);
+  border-radius:8px; padding:12px;
+}
 .stage-center{ position:relative; display:flex; justify-content:center; align-items:center; }
 
-/* =======================
-   MOBILE HUD (overlay)
-   ======================= */
-.mobile-hud{
-  position:absolute;
-  left:50%; top:12px; transform:translateX(-50%);
-  width:min(94vw, 620px);
-  background:#111; border:2px solid #0ff;
-  box-shadow:0 0 10px #0ff, inset 0 0 8px #0ff;
-  border-radius:10px; padding:10px 12px;
-  display:none;     /* mostrato in portrait */
-  z-index:30;
+/* =========================
+   CONTROLLI
+   ========================= */
+.controls-title{
+  font-size:12px; color:var(--cyan); text-align:center; margin-bottom:10px; letter-spacing:1px; text-shadow:0 0 8px var(--cyan);
 }
-.mobile-hud .mobile-row{
-  display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:4px 0;
+.controls-help{ margin-top:6px; font-size:12px; color:var(--cyan); opacity:.85; text-align:center; }
+
+/* =========================
+   UTILITY
+   ========================= */
+.mini-edit{
+  background:none; border:none; color:var(--cyan); font-size:12px; margin-left:6px; cursor:pointer; text-shadow:0 0 5px var(--cyan);
 }
-.mobile-hud .chip{
-  min-width:110px; text-align:center; padding:6px 8px;
-  border:1px solid #0ff; border-radius:8px; box-shadow:0 0 6px #0ff inset;
+.mini-edit:hover{ color:#fff; text-shadow:0 0 8px #fff; }
+
+.tiny-edit{
+  margin-left:6px; font-size:12px; padding:2px 6px; line-height:1;
+  background:transparent; border:1px solid var(--cyan); color:var(--cyan);
+  cursor:pointer; box-shadow:0 0 6px var(--cyan);
 }
-.mobile-hud .chip span{ display:block; font-size:10px; opacity:.9; }
-.mobile-hud .chip strong{ display:block; margin-top:2px; font-size:14px; }
-.mobile-hud .pill{
-  padding:8px 10px; font-size:12px; text-transform:uppercase;
-  background:#0f0; border:2px solid #0f0; color:#000; border-radius:8px;
-  box-shadow:0 0 8px #0f0;
-}
-.mobile-hud .pill.danger{ background:#f33; border-color:#f33; }
+.tiny-edit:hover{ background:#001018; }
 
-/* =======================
-   JOYSTICK (grid 3×3)
-   ======================= */
-.joystick{
-  width:var(--joy-size);
-  height:var(--joy-size);
-  display:none;                          /* mostrato in touch/portrait */
-  grid-template-columns:repeat(3, 1fr);
-  grid-template-rows:repeat(3, 1fr);
-  gap:var(--joy-gap);
-  pointer-events:auto;
-  touch-action:none;
-  z-index:40;
-}
-.joystick .pad{
-  background:#00150f;
-  border:2px solid #33ffaa;
-  box-shadow:0 0 8px #33ffaa, inset 0 0 8px #33ffaa;
-  border-radius:10px;
-  position:relative;
-}
-.joystick .pad:active{
-  transform:scale(0.96);
-  box-shadow:0 0 12px #00ff66, inset 0 0 12px #00ff66;
-  border-color:#00ff66;
-}
-.joystick .center   { grid-column:2/3; grid-row:2/3; border-radius:999px; }
-.joystick .btn-up   { grid-column:2/3; grid-row:1/2; }
-.joystick .btn-left { grid-column:1/2; grid-row:2/3; }
-.joystick .btn-right{ grid-column:3/4; grid-row:2/3; }
-.joystick .btn-down { grid-column:2/3; grid-row:3/4; }
-.joystick .btn-up::before,
-.joystick .btn-left::before,
-.joystick .btn-right::before,
-.joystick .btn-down::before{
-  content:""; position:absolute; inset:0; margin:auto; width:0; height:0; border-style:solid;
-  filter:drop-shadow(0 0 6px #33ffaa);
-}
-.joystick .btn-up::before   { border-width:12px 9px 0 9px;  border-color:#00ff66 transparent transparent transparent; top:20%; }
-.joystick .btn-down::before { border-width:0 9px 12px 9px;  border-color:transparent transparent #00ff66 transparent; bottom:20%; }
-.joystick .btn-left::before { border-width:9px 12px 9px 0;  border-color:transparent #00ff66 transparent transparent; left:20%; }
-.joystick .btn-right::before{ border-width:9px 0 9px 12px;  border-color:transparent transparent transparent #00ff66; right:20%; }
-
-/* =======================
-   BREAKPOINTS
-   ======================= */
-@media (max-width: 1200px){
-  .stage-rails{ grid-template-columns: 180px 1fr 180px; }
-}
-@media (max-width: 980px){
-  .stage-rails{ grid-template-columns: 150px 1fr 150px; }
-  .play-button.block{ font-size:13px; padding:8px 10px; }
-}
-@media (max-width: 700px){
-  .stage-rails{ grid-template-columns: 1fr; }
-  .side-panel.left, .right-rail{ display:none; }
-  .topbar-minimal{ padding:6px 8px; }
-  .game-wrapper{ padding:10px; }
-}
-
-/* =======================
-   ORIENTATION
-   ======================= */
-
-/* LANDSCAPE (telefono orizzontale/Tablet):
-   compattiamo laterali per evitare sovrapposizioni */
-@media (orientation: landscape){
-  .stage-rails{ grid-template-columns: 200px 1fr 200px; }
-  .side-panel, .rail{ padding:10px; }
-  .panel-title{ font-size:13px; }
-  .info-box{ padding:8px; }
-  .play-button.block{ font-size:13px; }
-}
-
-/* PORTRAIT (telefono verticale):
-   - LEVEL più piccolo
-   - HUD mobile visibile in alto
-   - joystick centrato in basso
-   - spazio extra sotto il canvas per non coprirlo
-*/
-@media (orientation: portrait){
-  .side-panel.left, .right-rail{ display:none; }
-  .stage-rails{ grid-template-columns: 1fr; }
-
-  .big-level #levelDisplay{ font-size:28px; } /* level più compatto in alto */
-
-  .mobile-hud{ display:block; }
-
-  #joystick{
-    position:fixed;
-    left:50%; transform:translateX(-50%);
-    bottom:12px; z-index:50;
-    display:grid;
-  }
-
-  .stage-center{ padding-bottom: calc(var(--joy-size) + 26px); }
-}
-
-/* Mostra HUD + joystick quando device è touch */
-.touch-mode .joystick{ display:grid; }
-.touch-mode .mobile-hud{ display:block; }
-
-/* Scroll/gesture */
-#joystick { touch-action:none; }
-#gameCanvas { touch-action: pan-y; }
-
-/* Footer */
-.copyright{
-  text-align:center; font-size:10px; color:#0ff;
-  position:relative; bottom:6px; width:100%; text-shadow:0 0 5px #0ff;
-}
-
-/* Di base nascosto */
-.joystick{ display:none; }
-
-/* Lo mostro SOLO su device touch */
-.touch-mode .joystick{ display:grid; }
-
-/* …ma mai su desktop/laptop (mouse/trackpad) */
-@media (hover: hover) and (pointer: fine){
-  .joystick{ display:none !important; }
-}
-
-@media (min-width: 701px){
-  .stage-rails{ grid-template-columns: 220px 1fr 220px; }
-  .side-panel.left, .right-rail{ display:block; }   /* stats + bottoni sempre visibili */
-  .mobile-hud{ display:none !important; }           /* niente HUD mobile su desktop */
-}
-
-/* Phone */
-@media (max-width: 700px){
-  .stage-rails{ grid-template-columns: 1fr; }
-  .side-panel.left, .right-rail{ display:none; }    /* nascondo colonne laterali */
-  .touch-mode .mobile-hud{ display:block; }
-  .touch-mode .joystick{ display:grid; }
-
-  /* titolo livello più piccolo */
-  .big-level #levelDisplay{ font-size: 28px; text-shadow:0 0 12px #0ff, 0 0 16px #f0f; }
-  .topbar-minimal{ padding:6px 10px; margin-bottom:8px; }
-
-  /* HUD “sticky” in alto e più leggero */
-  .mobile-hud{
-    position: sticky; top:6px; bottom:auto; transform:translateX(-50%);
-    padding:8px 10px;
-  }
-  .mobile-hud .chip{ min-width:90px; padding:4px 6px; }
-  .mobile-hud .chip strong{ font-size:13px; }
-
-  /* bottoni HUD più trasparenti */
-  .mobile-hud .pill{
-    background: rgba(0,255,0,.75);
-    border: 2px solid rgba(0,255,0,.85);
-    box-shadow: 0 0 6px rgba(0,255,0,.7);
-  }
-  .mobile-hud .pill.danger{
-    background: rgba(255,51,51,.78);
-    border-color: rgba(255,51,51,.85);
-    box-shadow: 0 0 6px rgba(255,51,51,.7);
-  }
-}
-
-/* Joystick un po’ più “soft” */
-.joystick .pad{
-  background: rgba(0,20,15,.35);
-  border: 2px solid rgba(51,255,170,.8);
-  box-shadow: 0 0 6px rgba(51,255,170,.6), inset 0 0 6px rgba(51,255,170,.55);
-}
-
-/* In landscape: lo fisso in basso a destra */
-@media (orientation: landscape){
-  .touch-mode #joystick{ position:fixed; right:12px; bottom:12px; z-index:50; }
-}
-
-/* Scroll sempre possibile */
-html, body { overflow-y:auto; }
-#gameCanvas { touch-action: pan-y; }
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width:1200px){ .stage-rails{ grid-template-columns:180px 1fr 180px; } }
+@media (max-width:980px){ .stage-rails{ grid-template-columns:150px 1fr 150px; } .play-button.block{ font-size:13px; padding:8px 10px; } }
+@media (max-width:820px){ .stage-rails{ overflow-x:auto; } }
