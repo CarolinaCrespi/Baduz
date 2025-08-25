@@ -156,18 +156,23 @@ export default class MazeScene extends Phaser.Scene{
     }
   }
 
+
   updateHUD(){
-    const levelEl=document.getElementById('levelDisplay');
-    const scoreEl=document.getElementById('score');
-    const nameEl =document.getElementById('playerNameDisplay');
-    const orbsEl =document.getElementById('energyDisplay');
-    if (levelEl) levelEl.textContent = `${this.currentLevel}`;
-    if (scoreEl) scoreEl.textContent = `${this.score}`.padStart(5,'0');
-    if (nameEl)  nameEl.firstChild.textContent = getPlayerName() + " ";
-    if (orbsEl)  orbsEl.textContent = `${this.coins}`;
-    const timerEl=document.getElementById('timer-display');
-    if (timerEl) timerEl.textContent = this.timerStarted ? this.formatTime(Date.now()-this.startTime) : '00:00:00';
-  }
+  const levelEl = document.getElementById('levelDisplay');
+  const scoreEl = document.getElementById('score');
+  const nameEl  = document.getElementById('playerNameDisplay');
+  const orbsEl  = document.getElementById('orbsDisplay') || document.getElementById('energyDisplay');
+  const timerEl = document.getElementById('timer-display');
+
+  if (levelEl) levelEl.textContent = `${this.currentLevel}`;
+  if (scoreEl) scoreEl.textContent = `${this.score}`.padStart(5,'0');
+  if (nameEl)  nameEl.firstChild.textContent = (getPlayerName() + " ");
+  if (orbsEl)  orbsEl.textContent = String(this.coins);
+  if (timerEl) timerEl.textContent = this.timerStarted
+    ? this.formatTime(Date.now() - this.startTime)
+    : '00:00:00';
+}
+
 
   showToast(msg, color='#00ff00'){
     if (this.toast) this.toast.destroy();
