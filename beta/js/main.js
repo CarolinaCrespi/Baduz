@@ -2,7 +2,7 @@ import MazeScene from './scene.js';
 import { saveGameSnapshot } from './storage.js';
 
 const game = new Phaser.Game({
-  type: Phaser.AUTO,
+  type: Phaser.CANVAS,
   width: 1000,
   height: 700,
   canvas: document.getElementById('gameCanvas'),
