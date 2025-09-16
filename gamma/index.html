@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BADUZ</title>
+
+  <!-- Font + Stili -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="stile.css">
+</head>
+<body>
+  <!-- =========================
+       HEADER / HERO
+       ========================= -->
+  <header>
+    <h1 class="game-title">BADUZ</h1>
+
+    <p class="game-description">
+      Baduz is a glowing sphere determined to escape from complex mazes.<br><br>
+      Collect <span class="accent-orb">Orbs</span> to unlock helpful hints.<br>
+      If you get lost, spend your Orbs to reveal a glowing path leading to the exit.<br><br>
+      How fast can you break free?
+    </p>
+
+    <!-- Guida rapida -->
+    <section class="how-to-play" aria-labelledby="how-to-play-title">
+      <h2 id="how-to-play-title">HOW TO PLAY</h2>
+      <p>Use the <strong>arrow keys</strong> to move Baduz through the maze.</p>
+      <p>Press <strong>P</strong> to pause / resume.</p>
+      <p><strong>S</strong> = Save, <strong>L</strong> = Load, <strong>R</strong> = Reset</p>
+      <br>
+      <span class="desktop-only-badge">DESKTOP VERSION ONLY</span>
+      <span class="touch-badge" aria-hidden="true">TOUCH CONTROLS ENABLED</span>
+    </section>
+
+    <!-- Pulsante PLAY -->
+    <div class="play-button-container">
+      <button id="playBtn" class="play-button" aria-label="Play Baduz">PLAY</button>
+    </div>
+  </header>
+
+  <!-- =========================
+       AREA DI GIOCO
+       ========================= -->
+  <main class="game-container" role="main">
+    <div class="game-wrapper">
+      <!-- TOP BAR: solo livello al centro -->
+      <div class="topbar-minimal only-level" role="region" aria-label="Level">
+        <div class="info-box big-level">
+          <span>LEVEL</span>
+          <div id="levelDisplay">1</div>
+        </div>
+      </div>
+
+      <!-- LAYOUT 3 COLONNE: sinistra (stats) | centro (canvas) | destra (controls) -->
+      <div class="stage-rails">
+        <!-- SINISTRA: STATS -->
+        <aside class="side-panel left" aria-label="Stats">
+          <div class="panel-title">STATS</div>
+
+          <div class="info-box">
+            <span>PLAYER</span>
+            <div id="playerNameDisplay">
+              Carolina
+              <button id="btnChangeName" class="mini-edit" aria-label="Change nickname">✎</button>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <span>SCORE</span>
+            <div id="score">00000</div>
+          </div>
+
+          <div class="info-box">
+            <span>ORBS</span>
+            <div id="orbsDisplay">0</div>
+          </div>
+
+          <div class="info-box">
+            <span>TIMER</span>
+            <div id="timer-display">00:00:00</div>
+          </div>
+        </aside>
+
+        <!-- CENTRO: CANVAS -->
+        <section class="stage-center" aria-label="Game canvas">
+          <canvas id="gameCanvas" width="1000" height="700"></canvas>
+        </section>
+
+        <!-- DESTRA: CONTROLLI -->
+        <aside class="rail right-rail" aria-label="Controls">
+          <div class="controls-title">CONTROLS</div>
+          <button id="btnHint"  class="play-button block"  aria-label="Use hint (H)">Hint (H)</button>
+          <button id="btnSave"  class="play-button block"  aria-label="Save (S)">Save (S)</button>
+          <button id="btnLoad"  class="play-button block"  aria-label="Load (L)">Load (L)</button>
+          <button id="btnReset" class="play-button block danger" aria-label="Reset level (R)">Reset (R)</button>
+          <div class="controls-help" aria-hidden="true">
+            <p>Arrows = Move</p>
+            <p>P = Pause</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <!-- =========================
+       FOOTER
+       ========================= -->
+  <footer class="copyright">
+    © 2025 Carolina Crespi. All rights reserved.
+  </footer>
+
+  <!-- =========================
+       CONTROLLI TOUCH (D-PAD)
+       ========================= -->
+  <div id="mobile-controls" aria-label="Controlli touch" class="hide-desktop" inert>
+    <button class="pad pad-up"    data-dir="up"    aria-label="Su">▲</button>
+    <div class="pad-row">
+      <button class="pad pad-left"  data-dir="left"  aria-label="Sinistra">◀</button>
+      <button class="pad pad-down"  data-dir="down"  aria-label="Giù">▼</button>
+      <button class="pad pad-right" data-dir="right" aria-label="Destra">▶</button>
+    </div>
+  </div>
+
+  <!-- =========================
+       SCRIPTS
+       ========================= -->
+  <!-- Phaser -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+  <!-- Gioco -->
+  <script src="demo.js"></script>
+
+  <!-- Demo mode + pulsante PLAY + setup touch -->
+  <script>
+    (function () {
+      const params = new URLSearchParams(location.search);
+
+      // Modalità demo: nasconde l’header e massimizza il canvas
+      if (params.has('demo')) {
+        document.body.classList.add('demo-mode');
+        const canvas = document.getElementById('gameCanvas');
+        if (canvas) {
+          canvas.width  = Math.floor(window.innerWidth * 0.95);
+          canvas.height = Math.floor(window.innerHeight * 0.80);
+        }
+      }
+
+      // Rilevazione touch per mostrare badge corretto
+      const isTouch = matchMedia('(hover: none), (pointer: coarse)').matches;
+      if (isTouch) {
+        document.body.classList.add('touch-device');
+      }
+
+      // PLAY ricarica la stessa pagina con ?demo=true
+      const playBtn = document.getElementById('playBtn');
+      if (playBtn) {
+        playBtn.addEventListener('click', () => {
+          const base = location.href.split('?')[0];
+          location.href = base + '?demo=true';
+        });
+      }
+
+      // ====== Stato D-Pad e binding eventi ======
+      window.baduzPad = { up:false, down:false, left:false, right:false };
+
+      const root = document.getElementById('mobile-controls');
+      if (root) {
+        // Attiva interazione
+        root.removeAttribute('inert');
+
+        const stop = e => { e.preventDefault(); e.stopPropagation(); };
+        const setDir = (dir,val) => (window.baduzPad[dir] = val);
+
+        function press(e){
+          const btn = e.target.closest('button[data-dir]');
+          if (!btn) return;
+          stop(e);
+          setDir(btn.dataset.dir, true);
+        }
+        function release(e){
+          stop(e);
+          const p = window.baduzPad;
+          p.up = p.down = p.left = p.right = false;
+        }
+
+        root.addEventListener('touchstart', press, {passive:false});
+        root.addEventListener('touchend',   release, {passive:false});
+        root.addEventListener('touchcancel',release, {passive:false});
+        root.addEventListener('mousedown',  press);
+        root.addEventListener('mouseup',    release);
+        root.addEventListener('mouseleave', release);
+        root.addEventListener('dblclick',   e => e.preventDefault());
+      }
+    })();
+  </script>
+</body>
+</html>
