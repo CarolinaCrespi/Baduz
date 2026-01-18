@@ -31,7 +31,7 @@
       <p>Press <strong>P</strong> to pause / resume.</p>
       <p><strong>S</strong> = Save, <strong>L</strong> = Load, <strong>R</strong> = Reset</p>
       <br>
-      <span class="desktop-only-badge">DESKTOP VERSION ONLY</span>
+      <span class="desktop-only-badge">DESKTOP & TOUCH READY</span>
     </section>
 
     <!-- Pulsante PLAY -->
@@ -86,6 +86,21 @@
         <!-- CENTRO: CANVAS -->
         <section class="stage-center" aria-label="Game canvas">
           <canvas id="gameCanvas" width="1000" height="700"></canvas>
+          <div class="touch-controls touch-only" aria-label="Touch controls">
+            <div class="dpad" role="group" aria-label="Move">
+              <button class="touch-btn up" data-dir="up" aria-label="Move up">▲</button>
+              <div class="dpad-middle">
+                <button class="touch-btn left" data-dir="left" aria-label="Move left">◀</button>
+                <button class="touch-btn down" data-dir="down" aria-label="Move down">▼</button>
+                <button class="touch-btn right" data-dir="right" aria-label="Move right">▶</button>
+              </div>
+            </div>
+            <div class="touch-actions" role="group" aria-label="Actions">
+              <button id="btnPauseTouch" class="touch-btn action" aria-label="Pause">Pause</button>
+              <button id="btnHintTouch" class="touch-btn action" aria-label="Hint">Hint</button>
+              <button id="btnResetTouch" class="touch-btn action danger" aria-label="Reset level">Reset</button>
+            </div>
+          </div>
         </section>
 
         <!-- DESTRA: CONTROLLI -->
@@ -124,14 +139,9 @@
     (function () {
       const params = new URLSearchParams(location.search);
 
-      // Modalità demo: nasconde l’header e massimizza il canvas
+      // Modalità demo: nasconde l’header
       if (params.has('demo')) {
         document.body.classList.add('demo-mode');
-        const canvas = document.getElementById('gameCanvas');
-        if (canvas) {
-          canvas.width  = Math.floor(window.innerWidth * 0.95);
-          canvas.height = Math.floor(window.innerHeight * 0.85);
-        }
       }
 
       // PLAY ricarica la stessa pagina con ?demo=true

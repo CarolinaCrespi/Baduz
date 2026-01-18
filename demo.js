@@ -175,6 +175,7 @@ class MazeScene extends Phaser.Scene {
     this.timerStarted = false;
     this.startTime = 0;
     this.antStartPos = { x: 0, y: 0 };
+    this.touchState = { up: false, down: false, left: false, right: false };
 
     if (data && data.snapshot) {
       this.restoreSnapshot = data.snapshot;
@@ -299,6 +300,7 @@ class MazeScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.ant, true, 0.1, 0.1);
     this.cameras.main.setZoom(1);
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.setupTouchControls();
 
     const exitZone = this.add.zone(exitPos.x, exitPos.y, this.tileSize, this.tileSize);
     this.physics.add.existing(exitZone, true);
@@ -413,6 +415,16 @@ class MazeScene extends Phaser.Scene {
     withBtn('btnHint', function () {
       this.useHint();
     });
+    withBtn('btnPauseTouch', function () {
+      this.togglePause();
+    });
+    withBtn('btnHintTouch', function () {
+      this.useHint();
+    });
+    withBtn('btnResetTouch', function () {
+      this.handleReset();
+      this.showToast('Level reset');
+    });
 
     const btnChange = document.getElementById('btnChangeName');
     if (btnChange)
@@ -428,10 +440,14 @@ class MazeScene extends Phaser.Scene {
     if (this.isGameOver || this.paused) return;
 
     this.ant.body.setVelocity(0);
-    if (this.cursors.left.isDown) this.ant.body.setVelocityX(-PLAYER_SPEED);
-    if (this.cursors.right.isDown) this.ant.body.setVelocityX(PLAYER_SPEED);
-    if (this.cursors.up.isDown) this.ant.body.setVelocityY(-PLAYER_SPEED);
-    if (this.cursors.down.isDown) this.ant.body.setVelocityY(PLAYER_SPEED);
+    const leftDown = this.cursors.left.isDown || this.touchState.left;
+    const rightDown = this.cursors.right.isDown || this.touchState.right;
+    const upDown = this.cursors.up.isDown || this.touchState.up;
+    const downDown = this.cursors.down.isDown || this.touchState.down;
+    if (leftDown) this.ant.body.setVelocityX(-PLAYER_SPEED);
+    if (rightDown) this.ant.body.setVelocityX(PLAYER_SPEED);
+    if (upDown) this.ant.body.setVelocityY(-PLAYER_SPEED);
+    if (downDown) this.ant.body.setVelocityY(PLAYER_SPEED);
 
     if (!this.timerStarted) {
       if (
@@ -448,6 +464,26 @@ class MazeScene extends Phaser.Scene {
       if (timerEl)
         timerEl.textContent = this.formatTime(Date.now() - this.startTime);
     }
+  }
+
+  setupTouchControls() {
+    if (this.touchControlsBound) return;
+    const setDir = (dir, isDown) => {
+      if (Object.prototype.hasOwnProperty.call(this.touchState, dir)) {
+        this.touchState[dir] = isDown;
+      }
+    };
+    const buttons = document.querySelectorAll('[data-dir]');
+    buttons.forEach((btn) => {
+      const dir = btn.getAttribute('data-dir');
+      const down = () => setDir(dir, true);
+      const up = () => setDir(dir, false);
+      btn.addEventListener('pointerdown', down);
+      btn.addEventListener('pointerup', up);
+      btn.addEventListener('pointerleave', up);
+      btn.addEventListener('pointercancel', up);
+    });
+    this.touchControlsBound = true;
   }
 
   /* --------------------------
@@ -857,10 +893,22 @@ const config = {
   canvas: document.getElementById('gameCanvas'),
   transparent: true, // canvas trasparente fuori dal disegno
   physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    width: 1000,
+    height: 700
+  },
   scene: MazeScene
 };
 
 const game = new Phaser.Game(config);
+
+window.addEventListener('resize', () => {
+  if (game && game.scale) {
+    game.scale.refresh();
+  }
+});
 
 /* =========================
    AUTOSAVE ON EXIT

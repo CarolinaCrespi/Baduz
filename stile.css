@@ -118,6 +118,10 @@ body::after {
 #gameCanvas {
   border: 2px solid var(--magenta);
   box-shadow: 0 0 20px var(--magenta), inset 0 0 10px var(--magenta);
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  touch-action: none;
 }
 
 /* =========================
@@ -274,6 +278,65 @@ body::after {
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
+}
+
+/* =========================
+   TOUCH CONTROLS
+   ========================= */
+.touch-controls {
+  display: none;
+  width: min(520px, 100%);
+  margin-top: 16px;
+  gap: 16px;
+  flex-direction: column;
+  align-items: center;
+}
+.touch-only {
+  display: none;
+}
+.dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.dpad-middle {
+  display: grid;
+  grid-template-columns: repeat(3, 60px);
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+.touch-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+.touch-btn {
+  min-width: 60px;
+  min-height: 50px;
+  border: 2px solid var(--cyan);
+  background: #000;
+  color: var(--cyan);
+  font-family: 'Press Start 2P', cursive;
+  font-size: 12px;
+  text-transform: uppercase;
+  box-shadow: 0 0 10px var(--cyan);
+  touch-action: none;
+}
+.touch-btn:active {
+  background: var(--cyan);
+  color: #000;
+}
+.touch-btn.action {
+  min-width: 90px;
+}
+.touch-btn.danger {
+  border-color: var(--red);
+  color: var(--red);
+  box-shadow: 0 0 10px var(--red);
 }
 
 /* =========================
@@ -337,4 +400,27 @@ body::after {
 }
 @media (max-width: 820px) {
   .stage-rails { overflow-x: auto; }
+}
+@media (max-width: 900px) {
+  .game-container { padding: 10px; }
+  .game-wrapper { padding: 12px; }
+  .game-title { font-size: 42px; }
+  .game-description { font-size: 20px; }
+  .how-to-play { width: 90%; font-size: 14px; }
+  .stage-rails {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  .side-panel,
+  .rail,
+  .topbar-minimal {
+    width: min(520px, 100%);
+  }
+  .controls-help { display: none; }
+  .touch-controls,
+  .touch-only {
+    display: flex;
+  }
 }
