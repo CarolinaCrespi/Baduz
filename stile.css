@@ -195,6 +195,407 @@ body::after {
   bottom: 6px;
   width: 100%;
   text-shadow: 0 0 5px var(--cyan);
+  /* Give the footer breathing room above it on the page */
+  margin-top: 20px;
+}
+
+/* =========================
+   NEW LAYOUT CLASSES
+   These styles support the unified single-page layout. They centralize the game canvas,
+   move stats into a top bar, place control buttons below, and implement a modal for
+   the "About" section that overlays the page. The existing stage-rails and side panel
+   styles remain unused in this layout.
+   ========================= */
+
+/* Container that constrains overall width and centers content */
+.page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 10px;
+}
+
+/* Header with title and info button */
+.main-header {
+  display: flex;
+  position: relative;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 0 8px;
+}
+
+/* Position info button within the header: top-right corner */
+.main-header .info-button {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Small circular button for opening About modal */
+.info-button {
+  background: var(--violet);
+  color: var(--bg-dark);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--violet);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+.info-button:hover {
+  background: var(--cyan);
+  color: var(--bg-dark);
+  box-shadow: 0 0 12px var(--cyan);
+}
+
+/* Modal overlay for About section */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 1000;
+}
+
+/* Display modal when open */
+.modal.open {
+  display: flex;
+}
+
+/* Modal content box */
+.modal-content {
+  position: relative;
+  background: var(--panel-bg);
+  border: 2px solid var(--cyan);
+  box-shadow: 0 0 15px var(--cyan);
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* Close button inside modal */
+.close-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--cyan);
+  cursor: pointer;
+}
+.close-button:hover {
+  color: #ffffff;
+}
+
+/* Modal heading and text */
+.modal-title {
+  text-align: center;
+  font-size: 20px;
+  margin-bottom: 12px;
+  color: var(--cyan);
+  text-shadow: 0 0 10px var(--cyan);
+}
+.modal-text {
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  color: var(--cyan);
+  text-shadow: 0 0 6px var(--cyan);
+}
+
+/* Primary game area container */
+.game-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* Bar that displays stats at top of game area */
+.topbar-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  background: var(--panel-bg);
+  border: 2px solid var(--cyan);
+  box-shadow: 0 0 10px var(--cyan);
+  padding: 8px 12px;
+  border-radius: 8px;
+  width: 100%;
+}
+
+/* Single stat item (label + value) */
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--cyan);
+}
+.stat-label {
+  font-weight: bold;
+}
+
+/* Responsive canvas container: scales with aspect ratio 1000/700 */
+.canvas-container {
+  width: 100%;
+  max-width: 1000px;
+  aspect-ratio: 1000 / 700;
+  border: 2px solid var(--magenta);
+  box-shadow: 0 0 20px var(--magenta), inset 0 0 10px var(--magenta);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.canvas-container canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Bar with control buttons below the canvas */
+.controls-bar {
+  /* Obsolete controls bar hidden: replaced by controls-area */
+  display: none;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+/* Controls container inside the modal */
+.modal-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* Directional pad for touch controls */
+.mobile-dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+/* Middle row of the d-pad */
+.dpad-middle {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Arrow buttons */
+.dpad-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: var(--panel-bg);
+  border: 2px solid var(--cyan);
+  color: var(--cyan);
+  font-size: 24px;
+  font-family: 'Press Start 2P', cursive;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 0 10px var(--cyan);
+  box-shadow: 0 0 10px var(--cyan), inset 0 0 6px var(--cyan);
+  cursor: pointer;
+  user-select: none;
+}
+.dpad-btn:active {
+  box-shadow: 0 0 6px var(--cyan), inset 0 0 10px var(--cyan);
+}
+
+/* Virtual joystick styling */
+.mobile-joystick {
+  display: none;
+}
+.joystick-outer {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px solid var(--cyan);
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.5), var(--panel-bg));
+  box-shadow: 0 0 10px var(--cyan), 0 0 20px var(--cyan);
+  touch-action: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.joystick-inner {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--magenta);
+  border: 2px solid var(--magenta);
+  box-shadow: 0 0 10px var(--magenta), 0 0 20px var(--magenta);
+  transform: translate(0, 0);
+  pointer-events: none;
+}
+
+/* Show the on-screen directional pad only on narrower screens */
+@media (min-width: 801px) {
+  .mobile-dpad {
+    display: none;
+  }
+  /* Hide joystick on larger screens */
+  .mobile-joystick {
+    display: none;
+  }
+}
+
+@media (max-width: 800px) {
+  .modal-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Controls area: align buttons and d-pad side-by-side on mobile */
+/*
+ * The controls area sits beneath the game canvas and holds both the
+ * primary action buttons and, on smaller screens, the on‑screen
+ * directional pad.  By default it stacks its children vertically
+ * and centers them; media queries override this for mobile and desktop.
+ */
+.controls-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  align-items: center;
+}
+
+/* Container for the control buttons */
+/*
+ * Container for the action buttons.  We start with a vertical stack
+ * so the buttons collapse neatly on narrow screens.  A media query
+ * below changes this to a horizontal row on wider screens and
+ * allows the width to shrink to fit.
+ */
+.controls-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+/* Mobile d-pad container: inherits mobile-dpad styles */
+.mobile-dpad {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .controls-area {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .controls-buttons {
+    flex: 1 1 60%;
+    /* keep the buttons stacked vertically on mobile */
+    flex-direction: column;
+  }
+  /* Show joystick on mobile and hide the d-pad */
+  .mobile-dpad {
+    display: none;
+  }
+  .mobile-joystick {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 0 0 40%;
+  }
+}
+
+/*
+ * Desktop and larger screens: hide the on‑screen d‑pad and arrange the
+ * action buttons in a single horizontal row.  The controls area
+ * centers itself beneath the canvas instead of stretching across
+ * the full width.
+ */
+@media (min-width: 801px) {
+  .controls-area {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+  }
+  .controls-buttons {
+    flex-direction: row;
+    width: auto;
+    gap: 10px;
+    flex-wrap: wrap; /* allow buttons to wrap onto multiple lines if necessary */
+  }
+  .mobile-dpad {
+    display: none;
+  }
+}
+
+/* Small variant of play button used for controls bar */
+.play-button.small {
+  padding: 8px 12px;
+  font-size: 12px;
+  background: var(--lime);
+  border: 2px solid var(--lime);
+  color: #000;
+  font-family: 'Press Start 2P', cursive;
+  cursor: pointer;
+  box-shadow: 0 0 10px var(--lime);
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+.play-button.small:hover {
+  background: #000;
+  color: var(--lime);
+}
+
+/* Danger variant for reset */
+.play-button.small.danger {
+  background: var(--red);
+  border-color: var(--red);
+  box-shadow: 0 0 10px var(--red);
+  color: #000;
+}
+.play-button.small.danger:hover {
+  background: #000;
+  color: var(--red);
+}
+
+/* Responsiveness: stack items on narrow screens */
+@media (max-width: 800px) {
+  .topbar-stats {
+    flex-direction: column;
+    align-items: center;
+  }
+  .controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 /* =========================
@@ -337,4 +738,11 @@ body::after {
 }
 @media (max-width: 820px) {
   .stage-rails { overflow-x: auto; }
+}
+
+@media (max-width: 800px) {
+  .controls-buttons .play-button.small {
+    width: 85%;              /* ← più stretti */
+    align-self: flex-start;  /* ← allineati a sinistra */
+  }
 }
