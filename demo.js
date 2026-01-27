@@ -35,6 +35,103 @@ const HINT_GLOW_COLORS = [0x33ffaa, 0x00ff66, 0x00ff66];
 const HINT_GLOW_WIDTHS = [10, 6, 3];
 const HINT_GLOW_ALPHAS = [0.15, 0.35, 0.9];
 
+// Colore riempimento delle pareti del labirinto.  Un viola scuro
+// che richiama l'atmosfera neon senza risultare troppo brillante.
+const WALL_FILL_COLOR = 0x1b0b33;
+
+
+
+// Helper to determine the open side (towards the corridor) of a special tile
+// such as START or EXIT. We look for the neighbouring cell that is walkable
+// (value === 1) and return the side as one of: 'left', 'right', 'up', 'down'.
+// If more than one neighbour is walkable we still pick one, preferring
+// horizontal movement (right/left) and then vertical (down/up). This matches
+// the visual intuition that the entrance usually opens towards the interior
+// of the maze along a main direction.
+function getOpenSide(mazeLayout, row, col) {
+  const size = mazeLayout.length;
+
+  // Prefer RIGHT, then LEFT, then DOWN, then UP.
+  if (col < size - 1 && mazeLayout[row][col + 1] === 1) return 'right';
+  if (col > 0 && mazeLayout[row][col - 1] === 1) return 'left';
+  if (row < size - 1 && mazeLayout[row + 1][col] === 1) return 'down';
+  if (row > 0 && mazeLayout[row - 1][col] === 1) return 'up';
+
+  // No open neighbour (should not normally happen for start/exit).
+  return null;
+}
+
+
+// For START/EXIT tiles placed on the outer border of the maze, the "inward"
+// side is deterministic: it is the side that points inside the maze area.
+// This avoids ambiguous cases where more than one neighbour is walkable
+// and ensures the open side is always the corridor-facing one.
+function getInwardSide(row, col, size) {
+  if (row === 0) return 'down'; // top border -> inside is down
+  if (row === size - 1) return 'up'; // bottom border -> inside is up
+  if (col === 0) return 'right'; // left border -> inside is right
+  if (col === size - 1) return 'left'; // right border -> inside is left
+  return null;
+}
+
+// Draw a neon-like glow around a tile. If openSide is provided, the glow
+// is omitted on that side (used for START/EXIT so that the inner side,
+// where the ball moves, stays open). If openSide is null, the glow is
+// drawn on all four sides (used for regular wall tiles).
+function drawTileGlow(graphics, centerX, centerY, tileSize, color, openSide) {
+  const half = tileSize / 2;
+  const layers = [
+    { inflate: 9, alpha: 0.15 },
+    { inflate: 5, alpha: 0.35 },
+    { inflate: 1, alpha: 0.8 }
+  ];
+  layers.forEach((layer) => {
+    const inflate = layer.inflate;
+    const alpha = layer.alpha;
+    const left = centerX - half - inflate;
+    const right = centerX + half + inflate;
+    const top = centerY - half - inflate;
+    const bottom = centerY + half + inflate;
+
+    graphics.lineStyle(4, color, alpha);
+
+    // Top edge
+    if (openSide !== 'up') {
+      graphics.beginPath();
+      graphics.moveTo(left, top);
+      graphics.lineTo(right, top);
+      graphics.strokePath();
+    }
+    // Bottom edge
+    if (openSide !== 'down') {
+      graphics.beginPath();
+      graphics.moveTo(left, bottom);
+      graphics.lineTo(right, bottom);
+      graphics.strokePath();
+    }
+    // Left edge
+    if (openSide !== 'left') {
+      graphics.beginPath();
+      graphics.moveTo(left, top);
+      graphics.lineTo(left, bottom);
+      graphics.strokePath();
+    }
+    // Right edge
+    if (openSide !== 'right') {
+      graphics.beginPath();
+      graphics.moveTo(right, top);
+      graphics.lineTo(right, bottom);
+      graphics.strokePath();
+    }
+  });
+}
+
+// Global variable to store the base tile size.  This is computed on the
+// first level based on the available canvas space and remains constant
+// for subsequent levels, preventing the maze and player from scaling
+// down as levels increase.
+let BASE_TILE_SIZE_GLOBAL = null;
+
 /* ===============
    RNG / SEEDS
    =============== */
@@ -221,66 +318,200 @@ class MazeScene extends Phaser.Scene {
       size = mazeData.size;
     }
 
-    this.physics.world.setBounds(
-      0,
-      0,
-      size * this.tileSize,
-      size * this.tileSize
-    );
+    /*
+     * Dynamically adjust the tile size so that smaller mazes occupy more of the
+     * available canvas and are centered.  We never shrink the tile below the
+     * default TILE_SIZE, but will enlarge it up to the maximum that still
+     * allows the maze to fit within the canvas with a small margin.  We also
+     * compute offsets so that the maze is centered horizontally and vertically.
+     */
+    {
+      const canvasW = this.cameras.main.width;
+      const canvasH = this.cameras.main.height;
+      const margin = 80; // margin to leave around the maze (increased to give more breathing room)
+      const availW = canvasW - 2 * margin;
+      const availH = canvasH - 2 * margin;
+      if (BASE_TILE_SIZE_GLOBAL === null) {
+        // On the first level, compute the largest tile size that allows the
+        // maze to fit within the available canvas area with a margin.  We
+        // never go below the default TILE_SIZE so that large mazes remain
+        // playable.  Store the result for reuse on subsequent levels.
+        const candidate = Math.floor(Math.min(availW / size, availH / size));
+        if (candidate > TILE_SIZE) {
+          this.tileSize = candidate;
+        } else {
+          this.tileSize = TILE_SIZE;
+        }
+        BASE_TILE_SIZE_GLOBAL = this.tileSize;
+      } else {
+        // Reuse the previously computed base tile size for all later levels.
+        this.tileSize = BASE_TILE_SIZE_GLOBAL;
+      }
+      // Compute maze dimensions using the chosen tile size and center it.
+      const mazeW = this.tileSize * size;
+      const mazeH = this.tileSize * size;
+      const offsetX = Math.max(0, Math.floor((canvasW - mazeW) / 2));
+      const offsetY = Math.max(0, Math.floor((canvasH - mazeH) / 2));
+      this.offsetX = offsetX;
+      this.offsetY = offsetY;
+    }
+    // Set the physics world bounds to match the maze area exactly.  This
+    // prevents the player from moving outside the entrance tile or beyond
+    // the maze boundaries.  We leave camera bounds larger for panning but
+    // restrict physical movement to within the maze.
+    const worldX = this.offsetX;
+    const worldY = this.offsetY;
+    const worldW = this.tileSize * size;
+    const worldH = this.tileSize * size;
+    this.physics.world.setBounds(worldX, worldY, worldW, worldH);
     this.topWalls = this.physics.add.staticGroup();
 
-    // Disegno labirinto
-    for (let row = 0; row < size; row++) {
-      for (let col = 0; col < size; col++) {
-        const x = col * this.tileSize;
-        const y = row * this.tileSize;
-        if (this.mazeLayout[row][col] === 0) {
-          const wall = this.add.rectangle(
-            x + this.tileSize / 2,
-            y + this.tileSize / 2,
-            this.tileSize,
-            this.tileSize,
-            0x000000
-          );
-          wall.setStrokeStyle(2, 0x00ffff);
-          this.physics.add.existing(wall, true);
-          this.topWalls.add(wall);
-        } else {
-          if (row === this.entrance.y && col === this.entrance.x) {
-            startPos = {
-              x: x + this.tileSize / 2,
-              y: y + this.tileSize / 2
-            };
-            this.add.text(x + 5, y + 5, 'START', {
-              fontSize: '13px',
-              fill: '#00ff00',
-              fontFamily: 'Arial',
-              stroke: '#000',
-              strokeThickness: 2
-            });
-          }
-          if (row === this.exit.y && col === this.exit.x) {
-            exitPos = { x: x + this.tileSize / 2, y: y + this.tileSize / 2 };
-            this.add.text(x + 5, y + 5, 'EXIT', {
-              fontSize: '13px',
-              fill: '#ff0000',
-              fontFamily: 'Arial',
-              stroke: '#000',
-              strokeThickness: 2
-            });
-          }
-        }
+    // Restrict the camera so that panning cannot move more than a certain
+    // margin beyond the maze edges.  We allow a margin of 80 pixels in
+    // every direction.  This prevents the player from getting lost by
+    // panning too far away from the maze.
+    {
+      const marginPan = 80;
+      const boundX = worldX - marginPan;
+      const boundY = worldY - marginPan;
+      const boundW = worldW + marginPan * 2;
+      const boundH = worldH + marginPan * 2;
+      this.cameras.main.setBounds(boundX, boundY, boundW, boundH);
+    }
+
+// Disegno labirinto
+// IMPORTANT: per evitare che il glow di START/EXIT venga "coperto" da tile
+// create successivamente (ordine di rendering di Phaser), rimandiamo il disegno
+// del glow a fine generazione, su un unico Graphics layer con depth alto.
+const glowLayer = this.add.graphics().setDepth(5);
+
+const wallGlowList = [];
+let startGlowInfo = null;
+let exitGlowInfo = null;
+
+for (let row = 0; row < size; row++) {
+  for (let col = 0; col < size; col++) {
+    // Apply offsets so the maze is centered in the canvas
+    const x = col * this.tileSize + this.offsetX;
+    const y = row * this.tileSize + this.offsetY;
+    const centerX = x + this.tileSize / 2;
+    const centerY = y + this.tileSize / 2;
+
+    if (this.mazeLayout[row][col] === 0) {
+      // Wall tile: viola scuro con bordo ciano
+      const wall = this.add.rectangle(
+        centerX,
+        centerY,
+        this.tileSize,
+        this.tileSize,
+        WALL_FILL_COLOR
+      );
+      wall.setStrokeStyle(2, 0x00ffff, 1);
+      wall.setDepth(1);
+
+      this.physics.add.existing(wall, true);
+      this.topWalls.add(wall);
+
+      // Glow muri: lo disegniamo DOPO (così non viene coperto da altre tile)
+      wallGlowList.push({ centerX, centerY });
+    } else {
+      // Tile corridoio. Per START ed EXIT applichiamo un glow parziale:
+      // viene escluso il lato interno verso il corridoio (openSide).
+      if (row === this.entrance.y && col === this.entrance.x) {
+        // Lato interno deterministico (START sta sul bordo)
+        const openSide =
+          getInwardSide(row, col, size) || getOpenSide(this.mazeLayout, row, col);
+
+        // Tile START: background scuro magenta, bordo ciano
+        const startTile = this.add.rectangle(
+          centerX,
+          centerY,
+          this.tileSize,
+          this.tileSize,
+          0x110011,
+          0.6
+        );
+        startTile.setStrokeStyle(2, 0x00ffff, 1);
+        startTile.setDepth(1);
+
+        // Glow solo sui tre lati chiusi (2 tra muri + 1 confine)
+        startGlowInfo = { centerX, centerY, openSide };
+
+        // Save the pixel coordinates of the start tile center for spawning
+        startPos = { x: centerX, y: centerY };
+      } else if (row === this.exit.y && col === this.exit.x) {
+        // Lato interno deterministico (EXIT sta sul bordo)
+        const openSide =
+          getInwardSide(row, col, size) || getOpenSide(this.mazeLayout, row, col);
+
+        // Tile EXIT: background scuro verde, bordo ciano
+        const exitTile = this.add.rectangle(
+          centerX,
+          centerY,
+          this.tileSize,
+          this.tileSize,
+          0x001100,
+          0.6
+        );
+        exitTile.setStrokeStyle(2, 0x00ffff, 1);
+        exitTile.setDepth(1);
+
+        // Glow solo sui tre lati chiusi
+        exitGlowInfo = { centerX, centerY, openSide };
+
+        // Save the pixel coordinates of the exit tile center for overlap detection
+        exitPos = { x: centerX, y: centerY };
       }
     }
+  }
+}
+
+// Ora disegniamo TUTTO il glow sopra alle tile (non viene più coperto)
+wallGlowList.forEach(({ centerX, centerY }) => {
+  drawTileGlow(glowLayer, centerX, centerY, this.tileSize, 0x00ffff, null);
+});
+
+if (startGlowInfo) {
+  drawTileGlow(
+    glowLayer,
+    startGlowInfo.centerX,
+    startGlowInfo.centerY,
+    this.tileSize,
+    BALL_COLOR,
+    startGlowInfo.openSide
+  );
+}
+
+if (exitGlowInfo) {
+  drawTileGlow(
+    glowLayer,
+    exitGlowInfo.centerX,
+    exitGlowInfo.centerY,
+    this.tileSize,
+    0x00ff00,
+    exitGlowInfo.openSide
+  );
+}
+
+
 
     /* ---- Player (Baduz) + glow ---- */
     if (this.ant) this.ant.destroy();
     const startFromSnapshot = this.restoreSnapshot && this.restoreSnapshot.player;
     const spawn = startFromSnapshot ? this.restoreSnapshot.player : startPos;
 
-    this.ant = this.add.circle(spawn.x, spawn.y, 10, BALL_COLOR);
+    // Scale the player (Baduz) radius relative to the current tile size so that it
+    // remains proportionate to the maze.  Use a minimum radius to avoid making it
+    // too small on very large mazes.
+    // Scale the player (Baduz) radius relative to the current tile size.  Increase
+    // the scaling factor slightly to make the ball larger.  Use a larger
+    // minimum radius to ensure visibility.
+    const ballRadius = Math.max(12, Math.floor(this.tileSize * 0.25));
+    this.ant = this.add.circle(spawn.x, spawn.y, ballRadius, BALL_COLOR);
+    this.ant.setDepth(3);
+    this.ballRadius = ballRadius;
     this.physics.add.existing(this.ant, false);
-    this.ant.body.setCircle(10);
+    this.ant.body.setCircle(ballRadius);
     this.ant.body.setCollideWorldBounds(true);
     this.ant.body.setBounce(0);
     this.physics.add.collider(this.ant, this.topWalls);
@@ -289,9 +520,10 @@ class MazeScene extends Phaser.Scene {
     this.antGlow = this.add.graphics().setDepth((this.ant.depth || 0) - 1);
     this.events.on('update', () => {
       this.antGlow.clear();
-      BALL_GLOW_WIDTHS.forEach((w, i) => {
+        BALL_GLOW_WIDTHS.forEach((w, i) => {
         this.antGlow.lineStyle(w, BALL_GLOW_COLOR, BALL_GLOW_ALPHAS[i]);
-        this.antGlow.strokeCircle(this.ant.x, this.ant.y, 10);
+        const r = this.ant.body?.radius || 10;
+        this.antGlow.strokeCircle(this.ant.x, this.ant.y, r);
       });
     });
 
@@ -300,9 +532,18 @@ class MazeScene extends Phaser.Scene {
     this.cameras.main.setZoom(1);
     this.cursors = this.input.keyboard.createCursorKeys();
 
+    this.exitPos = { x: exitPos.x, y: exitPos.y };
+
+    this.levelCleared = false;
     const exitZone = this.add.zone(exitPos.x, exitPos.y, this.tileSize, this.tileSize);
     this.physics.add.existing(exitZone, true);
-    this.physics.add.overlap(this.ant, exitZone, this.nextLevel, null, this);
+    this.physics.add.overlap(this.ant, exitZone, () => {
+      if (this.levelCleared) return;
+      if (this.isPlayerFullyInsideExit()) {
+        this.levelCleared = true;
+        this.nextLevel();
+      }
+    }, null, this);
 
     /* ---- Orbs (collezionabili) ---- */
     this.energyGroup = this.physics.add.group();
@@ -319,20 +560,27 @@ class MazeScene extends Phaser.Scene {
         this.mazeLayout[ry][rx] === 1 &&
         !(rx === this.entrance.x && ry === this.entrance.y)
       ) {
-        const px = rx * this.tileSize + this.tileSize / 2;
-        const py = ry * this.tileSize + this.tileSize / 2;
+        // Position the orb using the tile offsets so that it aligns with the
+        // centered and scaled maze.  Scale the orb radius relative to the tile
+        // size to maintain proportions across different maze sizes.
+        const px = rx * this.tileSize + this.tileSize / 2 + this.offsetX;
+        const py = ry * this.tileSize + this.tileSize / 2 + this.offsetY;
+        // Scale the orb radius relative to the tile size.  Increase the factor
+        // to make orbs larger and use a larger minimum radius.
+        const orbRadius = Math.max(6, Math.floor(this.tileSize * 0.18));
+        const pulseRadius = Math.floor(orbRadius * 1.3);
 
         // Orb base
-        const orb = this.add.circle(px, py, 6, ORB_FILL_COLOR);
+        const orb = this.add.circle(px, py, orbRadius, ORB_FILL_COLOR);
         orb.setStrokeStyle(2, ORB_STROKE_COLOR, 1);
 
         this.physics.add.existing(orb);
-        orb.body.setCircle(6);
+        orb.body.setCircle(orbRadius);
         orb.body.setImmovable(true);
         this.energyGroup.add(orb);
 
         // Pulse “respiro”
-        const pulse = this.add.circle(px, py, 8, ORB_FILL_COLOR, ORB_PULSE_OPACITY);
+        const pulse = this.add.circle(px, py, pulseRadius, ORB_FILL_COLOR, ORB_PULSE_OPACITY);
         pulse.setDepth((orb.depth || 0) - 1);
         orb.pulse = pulse;
         orb.pulseTween = this.tweens.add({
@@ -375,6 +623,53 @@ class MazeScene extends Phaser.Scene {
     this.timerStarted = false;
     this.startTime = 0;
 
+    /* ---- Entrance blocker ---- */
+    // To prevent the player from leaving the maze through the entrance after
+    // moving away from it, we prepare an invisible static blocker at the
+    // adjacent tile outside the maze.  It will be activated once the
+    // player leaves the start tile.  We determine the direction of the
+    // entrance relative to the maze: if the entrance is on the left edge
+    // (x === 0), the outside tile is to the left of the start; if on the
+    // right (x === size-1) then outside tile is to the right; similarly
+    // for top/bottom edges.  The blocker remains disabled until the
+    // player has moved off of the start tile.
+    this.hasLeftStart = false;
+    this.startBlocker = null;
+    {
+      const gridX = this.entrance.x;
+      const gridY = this.entrance.y;
+      let outX = 0,
+        outY = 0;
+      if (gridX === 0) {
+        // Entrance on left edge: blocker goes one tile to the left
+        outX = startPos.x - this.tileSize;
+        outY = startPos.y;
+      } else if (gridX === size - 1) {
+        // Right edge: blocker goes to the right
+        outX = startPos.x + this.tileSize;
+        outY = startPos.y;
+      } else if (gridY === 0) {
+        // Top edge: blocker goes above
+        outX = startPos.x;
+        outY = startPos.y - this.tileSize;
+      } else if (gridY === size - 1) {
+        // Bottom edge: blocker goes below
+        outX = startPos.x;
+        outY = startPos.y + this.tileSize;
+      }
+      // Only create the blocker if the outside coordinates differ from start
+      if (outX !== 0 || outY !== 0) {
+        const blocker = this.add.rectangle(outX, outY, this.tileSize, this.tileSize);
+        blocker.setFillStyle(0xffffff, 0); // invisible
+        this.physics.add.existing(blocker, true);
+        // Add collider but disable it initially.  We'll enable once the
+        // player leaves the start tile.
+        this.startBlocker = blocker;
+        blocker.body.enable = false;
+        this.physics.add.collider(this.ant, blocker);
+      }
+    }
+
     /* ---- Shortcuts ---- */
     this.input.keyboard.on('keydown-P', this.togglePause, this);
     this.input.keyboard.on('keydown-S', () => {
@@ -395,23 +690,73 @@ class MazeScene extends Phaser.Scene {
 
     /* ---- Bottoni UI ---- */
     const withBtn = (id, fn) => {
+      // Avoid stacking multiple click handlers on the same button by using
+      // the onclick property instead of addEventListener.  Each time a
+      // new scene is created, this will overwrite any previous handler.
       const el = document.getElementById(id);
-      if (el) el.addEventListener('click', () => fn.call(this));
+      if (el) el.onclick = () => fn.call(this);
     };
-    withBtn('btnSave', function () {
-      this.handleSave();
-      this.showToast('Saved');
-    });
-    withBtn('btnLoad', function () {
-      this.handleLoad();
-      this.showToast('Loaded');
+    // Map the Pause button to toggle pause/resume.  Save and Load buttons
+    // have been removed from the UI.
+    withBtn('btnPause', function () {
+      this.togglePause();
     });
     withBtn('btnReset', function () {
       this.handleReset();
       this.showToast('Level reset');
     });
+    // Recenter the camera on the player when the user has panned around.
+    withBtn('btnCenter', function () {
+      // Resume following the player and center immediately.
+      this.cameras.main.startFollow(this.ant, true, 0.1, 0.1);
+      this.cameras.main.centerOn(this.ant.x, this.ant.y);
+    });
     withBtn('btnHint', function () {
       this.useHint();
+    });
+
+    // ----------------------------------------------------------------------
+    // Camera panning for exploration
+    // Allow the player to drag the canvas (mouse or touch) to explore the maze
+    // without moving the ant.  While dragging, the camera stops following
+    // the ant.  When released, the player can tap the "Center" button to
+    // recenter on the ant.
+    this.isDraggingCamera = false;
+    this.dragStartX = 0;
+    this.dragStartY = 0;
+    this.cameraStartX = 0;
+    this.cameraStartY = 0;
+    this.input.on('pointerdown', (pointer) => {
+      // If the pointer originates from a UI element (like a button or the
+      // on-screen d-pad), don't start dragging the camera.
+      const eventTarget = pointer.event?.target;
+      if (
+        eventTarget &&
+        (eventTarget.closest('.controls-area') ||
+          eventTarget.closest('.main-header') ||
+          eventTarget.closest('.modal'))
+      ) {
+        return;
+      }
+      this.isDraggingCamera = true;
+      this.dragStartX = pointer.x;
+      this.dragStartY = pointer.y;
+      this.cameraStartX = this.cameras.main.scrollX;
+      this.cameraStartY = this.cameras.main.scrollY;
+      // Stop following the ant while dragging.
+      this.cameras.main.stopFollow();
+    });
+    this.input.on('pointermove', (pointer) => {
+      if (!this.isDraggingCamera) return;
+      const dx = pointer.x - this.dragStartX;
+      const dy = pointer.y - this.dragStartY;
+      this.cameras.main.setScroll(
+        this.cameraStartX - dx,
+        this.cameraStartY - dy
+      );
+    });
+    this.input.on('pointerup', () => {
+      this.isDraggingCamera = false;
     });
 
     const btnChange = document.getElementById('btnChangeName');
@@ -428,10 +773,38 @@ class MazeScene extends Phaser.Scene {
     if (this.isGameOver || this.paused) return;
 
     this.ant.body.setVelocity(0);
-    if (this.cursors.left.isDown) this.ant.body.setVelocityX(-PLAYER_SPEED);
-    if (this.cursors.right.isDown) this.ant.body.setVelocityX(PLAYER_SPEED);
-    if (this.cursors.up.isDown) this.ant.body.setVelocityY(-PLAYER_SPEED);
-    if (this.cursors.down.isDown) this.ant.body.setVelocityY(PLAYER_SPEED);
+
+    // If the player has moved away from the start tile, activate the
+    // entrance blocker so they cannot exit the maze through the entrance.
+    if (!this.hasLeftStart) {
+      const dx = Math.abs(this.ant.x - this.antStartPos.x);
+      const dy = Math.abs(this.ant.y - this.antStartPos.y);
+      // Consider the player off the start tile once they have moved more
+      // than a quarter of a tile in any direction.  Using a fraction of
+      // tileSize avoids false positives due to jitter.
+      if (dx > this.tileSize * 0.25 || dy > this.tileSize * 0.25) {
+        this.hasLeftStart = true;
+        if (this.startBlocker && this.startBlocker.body) {
+          this.startBlocker.body.enable = true;
+        }
+      }
+    }
+    // Support keyboard and on-screen mobile controls. If a direction is pressed on either,
+    // set the velocity accordingly. Keyboard input takes precedence over mobile input.
+    const mInput = (typeof window !== 'undefined' && window.mobileInput) ? window.mobileInput : null;
+    const mDir = mInput ? mInput.dir : null;
+    // Horizontal movement
+    if (this.cursors.left.isDown || mDir === 'left') {
+      this.ant.body.setVelocityX(-PLAYER_SPEED);
+    } else if (this.cursors.right.isDown || mDir === 'right') {
+      this.ant.body.setVelocityX(PLAYER_SPEED);
+    }
+    // Vertical movement
+    if (this.cursors.up.isDown || mDir === 'up') {
+      this.ant.body.setVelocityY(-PLAYER_SPEED);
+    } else if (this.cursors.down.isDown || mDir === 'down') {
+      this.ant.body.setVelocityY(PLAYER_SPEED);
+    }
 
     if (!this.timerStarted) {
       if (
@@ -513,9 +886,9 @@ class MazeScene extends Phaser.Scene {
       const g = this.add.graphics();
       g.lineStyle(HINT_GLOW_WIDTHS[i], HINT_GLOW_COLORS[i], HINT_GLOW_ALPHAS[i]);
       g.beginPath();
-      path.forEach((p, j) => {
-        const x = p.x * this.tileSize + this.tileSize / 2;
-        const y = p.y * this.tileSize + this.tileSize / 2;
+        path.forEach((p, j) => {
+        const x = p.x * this.tileSize + this.tileSize / 2 + this.offsetX;
+        const y = p.y * this.tileSize + this.tileSize / 2 + this.offsetY;
         if (j === 0) g.moveTo(x, y);
         else g.lineTo(x, y);
       });
@@ -535,8 +908,10 @@ class MazeScene extends Phaser.Scene {
   findPath() {
     const size = this.mazeLayout.length;
     const start = {
-      x: Math.floor(this.ant.x / this.tileSize),
-      y: Math.floor(this.ant.y / this.tileSize)
+      // Convert the ant's pixel position back into maze grid coordinates by
+      // subtracting the offset and dividing by the current tile size.
+      x: Math.floor((this.ant.x - this.offsetX) / this.tileSize),
+      y: Math.floor((this.ant.y - this.offsetY) / this.tileSize)
     };
     const end = this.exit;
     const dirs = [
@@ -648,6 +1023,31 @@ class MazeScene extends Phaser.Scene {
   /* --------------------------
      AVANZA LIVELLO / FINE DEMO
      -------------------------- */
+
+  /* --------------------------
+     CHECK USCITA (EXIT)
+     - evita completamento repentino: richiede che l'intera palla
+       sia entrata nella tile EXIT (non basta toccare il bordo esposto)
+     -------------------------- */
+  isPlayerFullyInsideExit() {
+    if (!this.ant || !this.exitPos) return false;
+
+    const r =
+      (this.ant.body && typeof this.ant.body.radius === 'number')
+        ? this.ant.body.radius
+        : (this.ballRadius || 0);
+
+    const half = this.tileSize / 2;
+    const margin = half - r;
+    if (margin <= 0) return false;
+
+    const dx = Math.abs(this.ant.x - this.exitPos.x);
+    const dy = Math.abs(this.ant.y - this.exitPos.y);
+
+    // La palla deve stare interamente dentro la cella EXIT
+    return dx <= margin && dy <= margin;
+  }
+
   nextLevel() {
     let levelTime = 0;
     if (this.timerStarted) {
