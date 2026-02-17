@@ -3,279 +3,326 @@
 <head>
   <meta charset="UTF-8" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BADUZ</title>
-  <!-- Font & Styles -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
-    rel="stylesheet"
-  />
-  <link rel="stylesheet" href="stile.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>BADUZ - Maze Escape</title>
+  <!-- Font & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Background Effects -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+  <div class="particles-container" id="particles"></div>
+
   <div class="page-container">
-    <!-- Header with title and info button -->
+    <!-- Header -->
     <header class="main-header">
-      <h1 class="game-title">BADUZ</h1>
-      <button id="aboutBtn" class="info-button" aria-label="About BADUZ">
-        ?
-      </button>
+      <div class="title-container">
+        <h1 class="game-title">
+          <span class="title-letter">B</span>
+          <span class="title-letter">A</span>
+          <span class="title-letter">D</span>
+          <span class="title-letter">U</span>
+          <span class="title-letter">Z</span>
+        </h1>
+        <div class="title-sub">BADUZ</div>
+      </div>
+      
+      <div class="header-controls">
+        <button id="soundToggle" class="icon-btn" aria-label="Toggle sound">
+          <i class="fas fa-volume-up"></i>
+        </button>
+        <button id="sfxToggle" class="icon-btn" aria-label="Toggle sound effects">
+          <i class="fas fa-bell"></i>
+        </button>
+        <button id="aboutBtn" class="icon-btn info" aria-label="About game">
+          <i class="fas fa-info-circle"></i>
+        </button>
+
+        <!-- Language toggle button. Allows switching between English and Italian. -->
+        <button id="langToggle" class="icon-btn" aria-label="Toggle language">
+          <i class="fas fa-language"></i>
+        </button>
+      </div>
     </header>
+
+    <!-- Tier Intro Modal (shown when new mechanics are introduced) -->
+    <div id="tierModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="tierModalTitle"><i class="fas fa-bolt"></i> NEW MECHANICS</h2>
+
+        <div class="modal-actions">
+          <button id="tierLangToggle" class="icon-btn" aria-label="Toggle language">
+            <i class="fas fa-language"></i>
+          </button>
+          <button id="closeTier" class="close-button" aria-label="Close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+</div>
+        <div class="modal-body">
+          <div class="modal-text" id="tierModalText"></div>
+          <div class="tip-box">
+            <i class="fas fa-play"></i>
+            <p id="tierModalHint"><strong>Tip:</strong> Press OK to start.</p>
+          </div>
+          <div style="display:flex; gap:10px; justify-content:center; margin-top: 18px;">
+            <button id="btnTierOk" class="action-btn center-action" style="width:auto; padding: 12px 18px;">
+              <div class="btn-icon"><i class="fas fa-check"></i></div>
+              <div class="btn-text" id="tierOkLabel">OK</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- About Modal -->
     <div id="aboutModal" class="modal">
       <div class="modal-content">
-        <button id="closeAbout" class="close-button" aria-label="Close about">×</button>
-        <h2 class="modal-title">About BADUZ</h2>
-        <p class="modal-text">
-          Baduz is a glowing sphere determined to escape from complex mazes.
-          Collect <span class="accent-orb">Orbs</span> to unlock helpful hints. If you get lost,
-          spend your Orbs to reveal a glowing path leading to the exit. How fast can you break free?
-        </p>
-        <p class="modal-text">
-          Move Baduz using the keyboard arrows or the on‑screen controls. The buttons below
-          the game let you: use a Hint (spend Orbs to reveal the exit path),
-          pause or resume the game, reset the current level, or re‑center the view.
-          On mobile devices, use the virtual joystick to move Baduz.
-        </p>
+        <div class="modal-header">
+          <h2 class="modal-title"><i class="fas fa-robot"></i> <span id="aboutTitleText">ABOUT BADUZ</span></h2>
+          <button id="closeAbout" class="close-button" aria-label="Close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="game-logo-modal">
+            <div class="logo-sphere"></div>
+            <span class="logo-text">BADUZ</span>
+          </div>
+          
+          <p class="modal-text" id="aboutLeadText">
+            <i class="fas fa-gamepad"></i> <strong>BADUZ</strong> is a sentient neon sphere trapped in an ever-evolving cyber maze. 
+            Your mission: navigate through complex labyrinths, collect <span class="accent-orb"><i class="fas fa-gem"></i> Energy Orbs</span>, 
+            and find the exit before time runs out.
+          </p>
+          
+          <div class="feature-grid">
+            <div class="feature">
+              <div class="feature-icon"><i class="fas fa-sitemap"></i></div>
+              <h3 id="feat1Title">20 Levels</h3>
+              <p id="feat1Desc">Progressively challenging mazes</p>
+            </div>
+            <div class="feature">
+              <div class="feature-icon"><i class="fas fa-lightbulb"></i></div>
+              <h3 id="feat2Title">Smart Hints</h3>
+              <p id="feat2Desc">Use Orbs to reveal paths</p>
+            </div>
+            <div class="feature">
+              <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+              <h3 id="feat3Title">Score System</h3>
+              <p id="feat3Desc">Speed & efficiency matter</p>
+            </div>
+              <div class="feature">
+              <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
+              <h3 id="feat4Title">Cross-Platform</h3>
+              <p id="feat4Desc">Play anywhere</p>
+            </div>
+          </div>
+
+          <div class="controls-guide">
+            <h3><i class="fas fa-keyboard"></i> CONTROLS</h3>
+            <div class="controls-list">
+              <div class="control-item">
+                <span class="key"><i class="fas fa-arrow-up"></i><i class="fas fa-arrow-left"><i class="fas fa-arrow-down"></i></i><i class="fas fa-arrow-right"></i></span>
+                <span id="ctrlMove">Move Baduz</span>
+              </div>
+              <div class="control-item">
+                <span class="key">H</span>
+                <span id="ctrlHint">Use Hint</span>
+              </div>
+              <div class="control-item">
+                <span class="key">P</span>
+                <span id="ctrlPause">Pause Game</span>
+              </div>
+              <div class="control-item">
+                <span class="key">R</span>
+                <span id="ctrlReset">Reset Level</span>
+              </div>
+              <!-- Save/Load removed -->
+            </div>
+          </div>
+
+          <div class="tip-box">
+            <i class="fas fa-lightbulb"></i>
+            <p id="aboutTip"><strong>Pro Tip:</strong> Complete levels quickly for higher scores! The timer affects your final points.</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Game Area -->
-    <div class="game-area">
-      <!-- Top bar with stats -->
-      <div class="topbar-stats">
-        <div class="stat-item player">
-          <span class="stat-label">PLAYER:</span>
-          <div id="playerNameDisplay">
-            Carolina
-            <button
-              id="btnChangeName"
-              class="mini-edit"
-              aria-label="Change nickname"
-            >✎</button>
+    <!-- Main Game Area -->
+    <main class="game-area">
+      <!-- Stats Dashboard -->
+      <div class="stats-dashboard">
+        <div class="stat-card player-card">
+          <div class="stat-header">
+            <i class="fas fa-user-astronaut"></i>
+            <h3>PLAYER</h3>
+          </div>
+          <div class="stat-content">
+            <div id="playerNameDisplay" class="player-name">Player</div>
+            <button id="btnChangeName" class="edit-btn" aria-label="Change name">
+              <i class="fas fa-edit"></i>
+            </button>
           </div>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">SCORE:</span>
-          <span id="score">00000</span>
+
+        <div class="stat-card">
+          <div class="stat-header">
+            <i class="fas fa-trophy"></i>
+            <h3>SCORE</h3>
+          </div>
+          <div class="stat-content">
+            <span id="score" class="stat-value">00000</span>
+          </div>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">ORBS:</span>
-          <span id="orbsDisplay">0</span>
+
+        <div class="stat-card time-card">
+          <div class="stat-header">
+            <i class="fas fa-clock"></i>
+            <h3>TIME</h3>
+          </div>
+          <div class="stat-content">
+            <span id="timer-display" class="stat-value">00:00:00</span>
+            <div class="time-progress">
+              <div class="time-bar"></div>
+            </div>
+          </div>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">TIME:</span>
-          <span id="timer-display">00:00:00</span>
+
+        <div class="stat-card level-card">
+          <div class="stat-header">
+            <i class="fas fa-layer-group"></i>
+            <h3>LEVEL</h3>
+          </div>
+          <div class="stat-content">
+            <span id="levelDisplay" class="stat-value">1</span>
+            <div class="level-progress">
+              <div class="level-dots">
+                <div class="dot active"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="stat-item">
-          <span class="stat-label">LEVEL:</span>
-          <span id="levelDisplay">1</span>
+
+        <div class="stat-card reset-card">
+          <div class="stat-header">
+            <i class="fas fa-redo"></i>
+            <h3>RESET</h3>
+          </div>
+          <div class="stat-content reset-card-body">
+            <button id="btnReset" class="reset-top-btn">
+              <i class="fas fa-redo"></i>
+              <span>Reset (R)</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- Canvas container -->
-      <div class="canvas-container">
-        <canvas id="gameCanvas" width="1000" height="700"></canvas>
-      </div>
-
-      <!-- Controls area: buttons on the left and mobile d-pad on the right (visible on mobile) -->
-      <div class="controls-area">
-        <div class="controls-buttons">
-          <button
-            id="btnHint"
-            class="play-button small"
-            aria-label="Use hint (H)"
-          >
-            Hint (H)
-          </button>
-          <!-- Pause button (P) -->
-          <button
-            id="btnPause"
-            class="play-button small"
-            aria-label="Pause / Resume (P)"
-          >
-            Pause (P)
-          </button>
-          <button
-            id="btnReset"
-            class="play-button small danger"
-            aria-label="Reset level (R)"
-          >
-            Reset (R)
-          </button>
-
-          <!-- Center view button to recenter the camera on the player -->
-          <button
-            id="btnCenter"
-            class="play-button small"
-            aria-label="Center view"
-          >
-            Center
-          </button>
-        </div>
-        <!-- Virtual joystick container (visible on mobile instead of the d-pad) -->
-        <div class="mobile-joystick" id="joystick">
-          <div class="joystick-outer">
-            <div class="joystick-inner"></div>
+      <!-- Game Canvas Container -->
+      <div class="game-container">
+        <div class="canvas-wrapper">
+          <div class="canvas-frame">
+            <canvas id="gameCanvas"></canvas></canvas>
+            <div class="frame-glow"></div>
+            <div class="canvas-overlay">
+              <div class="quick-actions">
+                <button id="btnQuickHint" class="quick-btn hint-btn" title="Quick Hint (H)">
+                  <i class="fas fa-lightbulb"></i>
+                </button>
+                <button id="btnQuickPause" class="quick-btn pause-btn" title="Pause (P)">
+                  <i class="fas fa-pause"></i>
+                </button>
+                <button id="btnQuickCenter" class="quick-btn center-btn" title="Center View">
+                  <i class="fas fa-crosshairs"></i>
+                </button>
+              </div>
+              <div class="canvas-stats">
+                <div class="stat-circle orbs-circle">
+                  <i class="fas fa-gem"></i>
+                  <span id="orbsCircle">0</span>
+                </div>
+                <div class="stat-circle jump-circle">
+                  <i class="fas fa-arrow-up"></i>
+                  <span id="jumpCircle">0</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <!-- Legacy d-pad kept for fallback; hidden on mobile by CSS -->
-        <div class="mobile-dpad">
-          <button class="dpad-btn dpad-up" data-dir="up">↑</button>
-          <div class="dpad-middle">
-            <button class="dpad-btn dpad-left" data-dir="left">←</button>
-            <button class="dpad-btn dpad-right" data-dir="right">→</button>
+
+        <!-- Game Controls -->
+        <div class="game-controls">
+          <!-- Mobile Controls -->
+          <div class="mobile-controls-section">
+            <div class="virtual-joystick" id="joystick">
+              <div class="joystick-base">
+                <div class="joystick-cap"></div>
+              </div>
+              <div class="joystick-label">JOYSTICK</div>
+            </div>
+
+            <div class="mobile-buttons">
+              <button class="mobile-btn hint-mobile" id="btnMobileHint">
+                <i class="fas fa-lightbulb"></i>
+                <span>Hint</span>
+              </button>
+              <button class="mobile-btn pause-mobile" id="btnMobilePause">
+                <i class="fas fa-pause"></i>
+                <span>Pause</span>
+              </button>
+              <button class="mobile-btn center-mobile" id="btnMobileCenter">
+                <i class="fas fa-crosshairs"></i>
+                <span>Center</span>
+              </button>
+              <button class="mobile-btn jump-mobile" id="btnMobileJump">
+                <i class="fas fa-arrow-up"></i>
+                <span>Jump</span>
+              </button>
+            </div>
           </div>
-          <button class="dpad-btn dpad-down" data-dir="down">↓</button>
         </div>
       </div>
-    </div>
+
+      <!-- Save/Load removed -->
+    </main>
 
     <!-- Footer -->
-    <footer class="copyright">
-      © 2025 Carolina Crespi.
+    <footer class="main-footer">
+      <div class="footer-content">
+        <div class="footer-logo">
+          <div class="footer-sphere"></div>
+          <span>BADUZ</span>
+        </div>
+        <div class="footer-info">
+          <p class="copyright">
+            <i class="far fa-copyright"></i> 2026 Carolina Crespi
+          </p>
+          <p class="tech-info">
+            Powered by Phaser 3 | Built with <i class="fas fa-heart"></i>
+          </p>
+        </div>
+        <div class="social-links">
+          <a href="#" class="social-link" aria-label="GitHub">
+            <i class="fab fa-github"></i>
+          </a>
+        </div>
+      </div>
     </footer>
   </div>
 
-  <!-- Phaser and game script -->
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   <script src="demo.js"></script>
-
-  <!-- About modal logic -->
-  <script>
-    (function () {
-      const aboutModal = document.getElementById('aboutModal');
-      const aboutBtn = document.getElementById('aboutBtn');
-      const closeAbout = document.getElementById('closeAbout');
-      aboutBtn.addEventListener('click', () => {
-        aboutModal.classList.add('open');
-      });
-      closeAbout.addEventListener('click', () => {
-        aboutModal.classList.remove('open');
-      });
-    })();
-    // Touch/mobile d-pad controls: set window.mobileInput.dir on press
-    (function () {
-      const dpad = document.querySelector('.mobile-dpad');
-      if (!dpad) return;
-      window.mobileInput = { dir: null };
-      function setDir(dir) {
-        window.mobileInput.dir = dir;
-      }
-      function clearDir(dir) {
-        if (window.mobileInput.dir === dir) {
-          window.mobileInput.dir = null;
-        }
-      }
-      dpad.querySelectorAll('.dpad-btn').forEach((btn) => {
-        const dir = btn.dataset.dir;
-        btn.addEventListener('pointerdown', (e) => {
-          e.preventDefault();
-          setDir(dir);
-        });
-        btn.addEventListener('pointerup', (e) => {
-          e.preventDefault();
-          clearDir(dir);
-        });
-        btn.addEventListener('pointercancel', (e) => {
-          e.preventDefault();
-          clearDir(dir);
-        });
-        btn.addEventListener('pointerleave', (e) => {
-          e.preventDefault();
-          clearDir(dir);
-        });
-        // Tap triggers a short movement
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          setDir(dir);
-          setTimeout(() => {
-            clearDir(dir);
-          }, 130);
-        });
-      });
-    })();
-  </script>
-
-  <!-- Virtual joystick controls -->
-  <script>
-    (function () {
-      const joystickEl = document.getElementById('joystick');
-      if (!joystickEl) return;
-      const outer = joystickEl.querySelector('.joystick-outer');
-      const inner = joystickEl.querySelector('.joystick-inner');
-      // Ensure a global mobileInput object exists
-      window.mobileInput = window.mobileInput || { dir: null };
-      let pointerActive = false;
-      let centerX = 0;
-      let centerY = 0;
-      let maxDist = 0;
-
-      function updateDirection(dx, dy) {
-        const threshold = 10;
-        if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) {
-          window.mobileInput.dir = null;
-          return;
-        }
-        if (Math.abs(dx) >= Math.abs(dy)) {
-          window.mobileInput.dir = dx > 0 ? 'right' : 'left';
-        } else {
-          window.mobileInput.dir = dy > 0 ? 'down' : 'up';
-        }
-      }
-
-      function pointerDown(e) {
-        e.preventDefault();
-        pointerActive = true;
-        const rect = outer.getBoundingClientRect();
-        centerX = rect.left + rect.width / 2;
-        centerY = rect.top + rect.height / 2;
-        maxDist = rect.width / 2 - inner.offsetWidth / 2;
-        pointerMove(e);
-      }
-
-      function pointerMove(e) {
-        if (!pointerActive) return;
-        let clientX, clientY;
-        if (e.touches && e.touches.length > 0) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        } else {
-          clientX = e.clientX;
-          clientY = e.clientY;
-        }
-        let dx = clientX - centerX;
-        let dy = clientY - centerY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > maxDist) {
-          const ratio = maxDist / dist;
-          dx *= ratio;
-          dy *= ratio;
-        }
-        inner.style.transform = `translate(${dx}px, ${dy}px)`;
-        updateDirection(dx, dy);
-      }
-
-      function pointerUp() {
-        if (!pointerActive) return;
-        pointerActive = false;
-        inner.style.transform = 'translate(0, 0)';
-        window.mobileInput.dir = null;
-      }
-
-      // Attach pointer and touch events
-      outer.addEventListener('pointerdown', pointerDown);
-      outer.addEventListener('pointermove', pointerMove);
-      outer.addEventListener('pointerup', pointerUp);
-      outer.addEventListener('pointercancel', pointerUp);
-      outer.addEventListener('pointerleave', pointerUp);
-
-      outer.addEventListener('touchstart', pointerDown, { passive: false });
-      outer.addEventListener('touchmove', pointerMove, { passive: false });
-      outer.addEventListener('touchend', pointerUp, { passive: false });
-      outer.addEventListener('touchcancel', pointerUp, { passive: false });
-    })();
-  </script>
+  <script src="ui.js"></script>
 </body>
 </html>
