@@ -1,83 +1,77 @@
 /* =========================================================
    BADUZ – DEMO (20 livelli)
    Phaser 3 – Maze + Orbs + Hint (BFS)
-   ---------------------------------------------------------
    ========================================================= */
 
-/* =========================
-   COSTANTI / CONFIGURAZIONE
-   ========================= */
+// =========================================================
+// 1. CONSTANTS & CONFIGURATION
+// =========================================================
 const STORAGE_PLAYER_KEY = 'baduz-player-name';
-const SAVE_VERSION_PREFIX = 'baduz-save-v1:';
+// Save/Load removed (simpler gameplay loop)
 
-const TILE_SIZE = 50;
-const PLAYER_SPEED = 200;
+const IS_MOBILE_VIEW = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(max-width: 768px)').matches;
+const TILE_SIZE = IS_MOBILE_VIEW ? 50 : 50; // più grande su mobile per riempire meglio il canvas
+const PLAYER_SPEED = 230;
 
-const SCORE_K = 5;
-const SCORE_ALPHA = 1.0;
-const SCORE_EPS = 1.0;
+// Enable snapping of analog joystick input to 8 directions. When true, analog input is quantized to the nearest 45° angle.
+const SNAP_8_DIR = true;
 
-const HINT_COST = 3; // Orbs richiesti per usare un hint
+// Score tuning: reward higher levels more steeply while still penalizing time
+const SCORE_K = 10;       // base multiplier
+const SCORE_ALPHA = 1.25; // level exponent (was 1.0)
+const SCORE_EPS = 0.8;    // time damping to avoid huge scores on very short runs
 
-// Colori palla (Baduz) + glow
-const BALL_COLOR = 0xff00ff;
+const HINT_COST = 3;
+
+// Cyberpunk Colors (matching new UI)
+const CYBER_CYAN = 0x00f3ff;
+const CYBER_MAGENTA = 0xff00ff;
+const CYBER_GREEN = 0x00ff9d;
+const CYBER_BLUE = 0x0066ff;
+const CYBER_PURPLE = 0x9d00ff;
+const CYBER_RED = 0xff0066;
+const CYBER_YELLOW = 0xffea00;
+const CYBER_GRAY = 0xc5c9d3;
+
+// Player colors
+const BALL_COLOR = CYBER_MAGENTA;
 const BALL_GLOW_COLOR = 0xff99ff;
 const BALL_GLOW_WIDTHS = [10, 5, 2];
 const BALL_GLOW_ALPHAS = [0.15, 0.35, 0.8];
 
-// Colori ORB (riempimento + bordo) + pulse
-const ORB_FILL_COLOR = 0x00ff66;
+// Orb colors
+const ORB_FILL_COLOR = CYBER_GREEN;
 const ORB_STROKE_COLOR = 0x33ffaa;
 const ORB_PULSE_OPACITY = 0.25;
 
-// Colori hint glow (traccia)
-const HINT_GLOW_COLORS = [0x33ffaa, 0x00ff66, 0x00ff66];
+// Hint colors
+const HINT_GLOW_COLORS = [CYBER_GREEN, 0x00ff66, 0x00ff66];
 const HINT_GLOW_WIDTHS = [10, 6, 3];
 const HINT_GLOW_ALPHAS = [0.15, 0.35, 0.9];
 
-// Colore riempimento delle pareti del labirinto.  Un viola scuro
-// che richiama l'atmosfera neon senza risultare troppo brillante.
+// Maze colors
 const WALL_FILL_COLOR = 0x1b0b33;
 
-
-
-// Helper to determine the open side (towards the corridor) of a special tile
-// such as START or EXIT. We look for the neighbouring cell that is walkable
-// (value === 1) and return the side as one of: 'left', 'right', 'up', 'down'.
-// If more than one neighbour is walkable we still pick one, preferring
-// horizontal movement (right/left) and then vertical (down/up). This matches
-// the visual intuition that the entrance usually opens towards the interior
-// of the maze along a main direction.
+// =========================================================
+// 2. UTILITY FUNCTIONS
+// =========================================================
 function getOpenSide(mazeLayout, row, col) {
   const size = mazeLayout.length;
-
-  // Prefer RIGHT, then LEFT, then DOWN, then UP.
   if (col < size - 1 && mazeLayout[row][col + 1] === 1) return 'right';
   if (col > 0 && mazeLayout[row][col - 1] === 1) return 'left';
   if (row < size - 1 && mazeLayout[row + 1][col] === 1) return 'down';
   if (row > 0 && mazeLayout[row - 1][col] === 1) return 'up';
-
-  // No open neighbour (should not normally happen for start/exit).
   return null;
 }
 
-
-// For START/EXIT tiles placed on the outer border of the maze, the "inward"
-// side is deterministic: it is the side that points inside the maze area.
-// This avoids ambiguous cases where more than one neighbour is walkable
-// and ensures the open side is always the corridor-facing one.
 function getInwardSide(row, col, size) {
-  if (row === 0) return 'down'; // top border -> inside is down
-  if (row === size - 1) return 'up'; // bottom border -> inside is up
-  if (col === 0) return 'right'; // left border -> inside is right
-  if (col === size - 1) return 'left'; // right border -> inside is left
+  if (row === 0) return 'down';
+  if (row === size - 1) return 'up';
+  if (col === 0) return 'right';
+  if (col === size - 1) return 'left';
   return null;
 }
 
-// Draw a neon-like glow around a tile. If openSide is provided, the glow
-// is omitted on that side (used for START/EXIT so that the inner side,
-// where the ball moves, stays open). If openSide is null, the glow is
-// drawn on all four sides (used for regular wall tiles).
 function drawTileGlow(graphics, centerX, centerY, tileSize, color, openSide) {
   const half = tileSize / 2;
   const layers = [
@@ -85,6 +79,7 @@ function drawTileGlow(graphics, centerX, centerY, tileSize, color, openSide) {
     { inflate: 5, alpha: 0.35 },
     { inflate: 1, alpha: 0.8 }
   ];
+  
   layers.forEach((layer) => {
     const inflate = layer.inflate;
     const alpha = layer.alpha;
@@ -95,28 +90,24 @@ function drawTileGlow(graphics, centerX, centerY, tileSize, color, openSide) {
 
     graphics.lineStyle(4, color, alpha);
 
-    // Top edge
     if (openSide !== 'up') {
       graphics.beginPath();
       graphics.moveTo(left, top);
       graphics.lineTo(right, top);
       graphics.strokePath();
     }
-    // Bottom edge
     if (openSide !== 'down') {
       graphics.beginPath();
       graphics.moveTo(left, bottom);
       graphics.lineTo(right, bottom);
       graphics.strokePath();
     }
-    // Left edge
     if (openSide !== 'left') {
       graphics.beginPath();
       graphics.moveTo(left, top);
       graphics.lineTo(left, bottom);
       graphics.strokePath();
     }
-    // Right edge
     if (openSide !== 'right') {
       graphics.beginPath();
       graphics.moveTo(right, top);
@@ -126,15 +117,12 @@ function drawTileGlow(graphics, centerX, centerY, tileSize, color, openSide) {
   });
 }
 
-// Global variable to store the base tile size.  This is computed on the
-// first level based on the available canvas space and remains constant
-// for subsequent levels, preventing the maze and player from scaling
-// down as levels increase.
+// Global tile size
 let BASE_TILE_SIZE_GLOBAL = null;
 
-/* ===============
-   RNG / SEEDS
-   =============== */
+// =========================================================
+// 3. RNG / SEEDS
+// =========================================================
 function mulberry32(seed) {
   return function () {
     let t = (seed += 0x6d2b79f5);
@@ -143,222 +131,191 @@ function mulberry32(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+
 function makeLevelSeed(runSeed, level) {
   return (runSeed ^ (level * 2654435761)) >>> 0;
 }
 
-/* =================
-   PLAYER / NICKNAME
-   ================= */
+// =========================================================
+// 4. PLAYER MANAGEMENT
+// =========================================================
 function getPlayerName() {
   let name = localStorage.getItem(STORAGE_PLAYER_KEY);
   if (!name) {
-    name = prompt('Insert nickname:', 'Guest') || 'Guest';
+    name = prompt('Enter your nickname:', 'CyberPlayer') || 'CyberPlayer';
     localStorage.setItem(STORAGE_PLAYER_KEY, name);
   }
   return name;
 }
+
 let PLAYER_NAME = getPlayerName();
 
 function changePlayerName() {
-  const newName = prompt('Insert new nickname:', PLAYER_NAME) || PLAYER_NAME;
+  const newName = prompt('Enter new nickname:', PLAYER_NAME) || PLAYER_NAME;
   PLAYER_NAME = newName;
   localStorage.setItem(STORAGE_PLAYER_KEY, newName);
-  const nameEl = document.getElementById('playerNameDisplay');
-  if (nameEl) nameEl.firstChild.textContent = newName + ' ';
-}
-
-/* =============
-   SALVATAGGI
-   ============= */
-function saveKey() {
-  return `${SAVE_VERSION_PREFIX}${PLAYER_NAME}`;
-}
-function saveGameSnapshot(state) {
-  try {
-    localStorage.setItem(saveKey(), JSON.stringify(state));
-    return true;
-  } catch (e) {
-    console.error('Save failed', e);
-    return false;
+  
+  // Update UI
+  const nameDisplay = document.getElementById('playerNameDisplay');
+  if (nameDisplay) nameDisplay.textContent = newName;
+  
+  // Update game if running
+  if (window.game && window.game.scene.keys['MazeScene']) {
+    window.game.scene.keys['MazeScene'].PLAYER_NAME = newName;
+    window.game.scene.keys['MazeScene'].updateHUD();
   }
 }
-function loadGameSnapshot() {
-  try {
-    const s = localStorage.getItem(saveKey());
-    return s ? JSON.parse(s) : null;
-  } catch (e) {
-    console.error('Load failed', e);
-    return null;
-  }
-}
-function resetGameSnapshot() {
-  localStorage.removeItem(saveKey());
-}
 
-/* =====================
-   PUNTEGGIO / FORMULA
-   ===================== */
+// =========================================================
+// 5. SAVE SYSTEM (REMOVED)
+// =========================================================
+
+// =========================================================
+// 6. SCORING SYSTEM
+// =========================================================
 function computeLevelScore(level, elapsedMs) {
   const tSec = Math.max(0, elapsedMs / 1000);
   const raw = (SCORE_K * Math.pow(level, SCORE_ALPHA)) / (tSec + SCORE_EPS);
   return Math.max(1, Math.round(raw));
 }
 
-/* =============================
-   SCENA PRINCIPALE – MazeScene
-   ============================= */
+// =========================================================
+// 7. MAZE SCENE CLASS
+// =========================================================
 class MazeScene extends Phaser.Scene {
   constructor() {
     super('MazeScene');
   }
 
-  /* --------------------------
-     HUD
-     -------------------------- */
+  // =======================================================
+  // 7.1 HUD & UI MANAGEMENT
+  // =======================================================
   updateHUD() {
     const levelEl = document.getElementById('levelDisplay');
     const timerEl = document.getElementById('timer-display');
     const scoreEl = document.getElementById('score');
     const nameEl = document.getElementById('playerNameDisplay');
-    const orbsEl =
-      document.getElementById('orbsDisplay') ||
-      document.getElementById('energyDisplay'); // fallback
+    const orbsEl = document.getElementById('orbsDisplay');
+    const jumpEl = document.getElementById('jumpDisplay');
 
     if (levelEl) levelEl.textContent = `${this.currentLevel}`;
-    if (timerEl)
-      timerEl.textContent = this.timerStarted
-        ? this.formatTime(Date.now() - this.startTime)
-        : '00:00:00';
+    if (timerEl) {
+      timerEl.textContent = this.timerStarted ? 
+        this.formatTime(Date.now() - this.startTime) : '00:00:00';
+    }
     if (scoreEl) scoreEl.textContent = `${this.score}`.padStart(5, '0');
-    if (nameEl) nameEl.firstChild.textContent = PLAYER_NAME + ' ';
+    if (nameEl) nameEl.textContent = PLAYER_NAME;
     if (orbsEl) orbsEl.textContent = `${this.coins}`;
+    if (jumpEl) jumpEl.textContent = `${this.jumpCharges || 0}`;
+    const orbsCircleEl = document.getElementById('orbsCircle');
+    if (orbsCircleEl) orbsCircleEl.textContent = `${this.coins}`;
+    const jumpCircleEl = document.getElementById('jumpCircle');
+    if (jumpCircleEl) jumpCircleEl.textContent = `${this.jumpCharges || 0}`;
+    
+    // Update UI animations if available
+    if (typeof window.updateOrbAnimation === 'function') {
+      window.updateOrbAnimation(this.coins);
+    }
+    
+    if (typeof window.updateLevelDots === 'function') {
+      window.updateLevelDots(this.currentLevel);
+    }
   }
 
   showToast(msg, color = '#00ff00') {
     if (this.toast) this.toast.destroy();
-    this.toast = this.add
-      .text(this.cameras.main.centerX, this.cameras.main.height - 40, msg, {
-        fontSize: '16px',
-        fill: color,
-        fontFamily: 'Arial',
+    
+    // Convert hex color to cyberpunk colors
+    let cyberColor = CYBER_GREEN;
+    if (color === '#ffcc00') cyberColor = CYBER_YELLOW;
+    if (color === '#c5c9d3') cyberColor = CYBER_GRAY;
+    if (color === '#ff0000') cyberColor = CYBER_RED;
+    if (color === '#00ffff') cyberColor = CYBER_CYAN;
+    
+    this.toast = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.height - 40,
+      msg,
+      {
+        fontSize: '20px',
+        fill: `#${cyberColor.toString(16)}`,
+        fontFamily: 'Orbitron, Arial',
         backgroundColor: '#000',
-        padding: { x: 10, y: 6 }
-      })
-      .setOrigin(0.5, 1)
-      .setScrollFactor(0)
-      .setDepth(2000);
-    this.time.delayedCall(1200, () => {
+        padding: { x: 15, y: 8 },
+        stroke: '#000',
+        strokeThickness: 4
+      }
+    )
+    .setOrigin(0.5, 1)
+    .setScrollFactor(0)
+    .setDepth(2000);
+    
+    this.time.delayedCall(1500, () => {
       if (this.toast) this.toast.destroy();
     });
   }
 
-  /* --------------------------
-     LIFECYCLE: init / create / update
-     -------------------------- */
+  // =======================================================
+  // 7.2 SCENE LIFECYCLE
+  // =======================================================
   init(data) {
-    this.currentLevel =
-      data && data.currentLevel !== undefined ? data.currentLevel : 1;
-    this.totalTime =
-      data && data.totalTime !== undefined ? data.totalTime : 0;
-    this.score = data && data.score !== undefined ? data.score : 0;
-    this.coins = data && data.coins !== undefined ? data.coins : 0;
+    this.currentLevel = data?.currentLevel ?? 1;
+    this.totalTime = data?.totalTime ?? 0;
+    this.score = data?.score ?? 0;
+    this.coins = data?.coins ?? 0;
 
     this.isGameOver = false;
     this.paused = false;
+    this.introPaused = false;
+    this.lastWallHitAt = 0;
+    this.wallContacting = false;
+    this.wasTouchingWall = false;
 
     this.tileSize = TILE_SIZE;
     this.mazeLayout = [];
     this.timerStarted = false;
     this.startTime = 0;
     this.antStartPos = { x: 0, y: 0 };
+    // Clear per-level feature maps so data from previous tiers can't leak
+    // (e.g., zone slowdown persisting into hazard levels 16-20).
+    this.zoneMap = null;
+    this.hazardMap = null;
 
-    if (data && data.snapshot) {
-      this.restoreSnapshot = data.snapshot;
-      this.runSeed = data.snapshot.runSeed ?? (Date.now() >>> 0);
-      this.rngSeed =
-        data.snapshot.rngSeed ??
-        makeLevelSeed(this.runSeed, data.snapshot.currentLevel || 1);
-      this.currentLevel = data.snapshot.currentLevel ?? this.currentLevel;
-      this.totalTime = data.snapshot.totalTime ?? this.totalTime;
-      this.score = data.snapshot.score ?? this.score;
-      this.coins = data.snapshot.coins ?? this.coins;
-    } else {
-      this.restoreSnapshot = null;
-      this.runSeed = (data && data.runSeed) ? data.runSeed : (Date.now() >>> 0);
-      this.rngSeed =
-        (data && data.rngSeed !== undefined)
-          ? data.rngSeed
-          : makeLevelSeed(this.runSeed, this.currentLevel);
-    }
+    // Save/Load removed. We keep deterministic generation via runSeed+rngSeed.
+    this.runSeed = data?.runSeed ?? (Date.now() >>> 0);
+    this.rngSeed = data?.rngSeed ?? makeLevelSeed(this.runSeed, this.currentLevel);
   }
 
   create() {
-    /* ---- Maze build (layout + start/exit) ---- */
-    let size,
-      startPos = { x: 0, y: 0 },
-      exitPos = { x: 0, y: 0 };
+    // ===================================================
+    // 7.2.1 Maze Generation
+    // ===================================================
+    let size, startPos = { x: 0, y: 0 }, exitPos = { x: 0, y: 0 };
 
-    if (
-      this.restoreSnapshot &&
-      this.restoreSnapshot.mazeLayout &&
-      this.restoreSnapshot.entrance &&
-      this.restoreSnapshot.exit
-    ) {
-      this.mazeLayout = this.restoreSnapshot.mazeLayout;
-      this.entrance = this.restoreSnapshot.entrance;
-      this.exit = this.restoreSnapshot.exit;
-      size = this.mazeLayout.length;
-    } else {
-      const rng = mulberry32(this.rngSeed);
-      const mazeData = this.generateMaze(this.currentLevel, rng);
-      this.mazeLayout = mazeData.maze;
-      this.entrance = mazeData.entrance;
-      this.exit = mazeData.exit;
-      size = mazeData.size;
-    }
+    const rng = mulberry32(this.rngSeed);
+    const mazeData = this.generateMaze(this.currentLevel, rng);
+    this.mazeLayout = mazeData.maze;
+    this.entrance = mazeData.entrance;
+    this.exit = mazeData.exit;
+    size = mazeData.size;
 
-    /*
-     * Dynamically adjust the tile size so that smaller mazes occupy more of the
-     * available canvas and are centered.  We never shrink the tile below the
-     * default TILE_SIZE, but will enlarge it up to the maximum that still
-     * allows the maze to fit within the canvas with a small margin.  We also
-     * compute offsets so that the maze is centered horizontally and vertically.
-     */
+    // ===================================================
+    // 7.2.2 Tile sizing (KEEP ORIGINAL FEEL)
+    // Tiles stay constant across levels. Larger mazes require panning.
+    // ===================================================
     {
       const canvasW = this.cameras.main.width;
       const canvasH = this.cameras.main.height;
-      const margin = 80; // margin to leave around the maze (increased to give more breathing room)
-      const availW = canvasW - 2 * margin;
-      const availH = canvasH - 2 * margin;
-      if (BASE_TILE_SIZE_GLOBAL === null) {
-        // On the first level, compute the largest tile size that allows the
-        // maze to fit within the available canvas area with a margin.  We
-        // never go below the default TILE_SIZE so that large mazes remain
-        // playable.  Store the result for reuse on subsequent levels.
-        const candidate = Math.floor(Math.min(availW / size, availH / size));
-        if (candidate > TILE_SIZE) {
-          this.tileSize = candidate;
-        } else {
-          this.tileSize = TILE_SIZE;
-        }
-        BASE_TILE_SIZE_GLOBAL = this.tileSize;
-      } else {
-        // Reuse the previously computed base tile size for all later levels.
-        this.tileSize = BASE_TILE_SIZE_GLOBAL;
-      }
-      // Compute maze dimensions using the chosen tile size and center it.
+      this.tileSize = TILE_SIZE;
+
+      // Center small mazes; large ones start at (0,0)
       const mazeW = this.tileSize * size;
       const mazeH = this.tileSize * size;
-      const offsetX = Math.max(0, Math.floor((canvasW - mazeW) / 2));
-      const offsetY = Math.max(0, Math.floor((canvasH - mazeH) / 2));
-      this.offsetX = offsetX;
-      this.offsetY = offsetY;
+      this.offsetX = Math.max(0, Math.floor((canvasW - mazeW) / 2));
+      this.offsetY = Math.max(0, Math.floor((canvasH - mazeH) / 2));
     }
-    // Set the physics world bounds to match the maze area exactly.  This
-    // prevents the player from moving outside the entrance tile or beyond
-    // the maze boundaries.  We leave camera bounds larger for panning but
-    // restrict physical movement to within the maze.
+
+    // Set physics bounds
     const worldX = this.offsetX;
     const worldY = this.offsetY;
     const worldW = this.tileSize * size;
@@ -366,186 +323,153 @@ class MazeScene extends Phaser.Scene {
     this.physics.world.setBounds(worldX, worldY, worldW, worldH);
     this.topWalls = this.physics.add.staticGroup();
 
-    // Restrict the camera so that panning cannot move more than a certain
-    // margin beyond the maze edges.  We allow a margin of 80 pixels in
-    // every direction.  This prevents the player from getting lost by
-    // panning too far away from the maze.
+    // Camera bounds
     {
       const marginPan = 80;
-      const boundX = worldX - marginPan;
-      const boundY = worldY - marginPan;
-      const boundW = worldW + marginPan * 2;
-      const boundH = worldH + marginPan * 2;
-      this.cameras.main.setBounds(boundX, boundY, boundW, boundH);
+      this.cameras.main.setBounds(
+        worldX - marginPan,
+        worldY - marginPan,
+        worldW + marginPan * 2,
+        worldH + marginPan * 2
+      );
     }
 
-// Disegno labirinto
-// IMPORTANT: per evitare che il glow di START/EXIT venga "coperto" da tile
-// create successivamente (ordine di rendering di Phaser), rimandiamo il disegno
-// del glow a fine generazione, su un unico Graphics layer con depth alto.
-const glowLayer = this.add.graphics().setDepth(5);
+    // ===================================================
+    // 7.2.3 Maze Rendering
+    // ===================================================
+    const glowLayer = this.add.graphics().setDepth(5);
+    const wallGlowList = [];
+    let startGlowInfo = null, exitGlowInfo = null;
 
-const wallGlowList = [];
-let startGlowInfo = null;
-let exitGlowInfo = null;
+    for (let row = 0; row < size; row++) {
+      for (let col = 0; col < size; col++) {
+        const x = col * this.tileSize + this.offsetX;
+        const y = row * this.tileSize + this.offsetY;
+        const centerX = x + this.tileSize / 2;
+        const centerY = y + this.tileSize / 2;
 
-for (let row = 0; row < size; row++) {
-  for (let col = 0; col < size; col++) {
-    // Apply offsets so the maze is centered in the canvas
-    const x = col * this.tileSize + this.offsetX;
-    const y = row * this.tileSize + this.offsetY;
-    const centerX = x + this.tileSize / 2;
-    const centerY = y + this.tileSize / 2;
-
-    if (this.mazeLayout[row][col] === 0) {
-      // Wall tile: viola scuro con bordo ciano
-      const wall = this.add.rectangle(
-        centerX,
-        centerY,
-        this.tileSize,
-        this.tileSize,
-        WALL_FILL_COLOR
-      );
-      wall.setStrokeStyle(2, 0x00ffff, 1);
-      wall.setDepth(1);
-
-      this.physics.add.existing(wall, true);
-      this.topWalls.add(wall);
-
-      // Glow muri: lo disegniamo DOPO (così non viene coperto da altre tile)
-      wallGlowList.push({ centerX, centerY });
-    } else {
-      // Tile corridoio. Per START ed EXIT applichiamo un glow parziale:
-      // viene escluso il lato interno verso il corridoio (openSide).
-      if (row === this.entrance.y && col === this.entrance.x) {
-        // Lato interno deterministico (START sta sul bordo)
-        const openSide =
-          getInwardSide(row, col, size) || getOpenSide(this.mazeLayout, row, col);
-
-        // Tile START: background scuro magenta, bordo ciano
-        const startTile = this.add.rectangle(
-          centerX,
-          centerY,
-          this.tileSize,
-          this.tileSize,
-          0x110011,
-          0.6
-        );
-        startTile.setStrokeStyle(2, 0x00ffff, 1);
-        startTile.setDepth(1);
-
-        // Glow solo sui tre lati chiusi (2 tra muri + 1 confine)
-        startGlowInfo = { centerX, centerY, openSide };
-
-        // Save the pixel coordinates of the start tile center for spawning
-        startPos = { x: centerX, y: centerY };
-      } else if (row === this.exit.y && col === this.exit.x) {
-        // Lato interno deterministico (EXIT sta sul bordo)
-        const openSide =
-          getInwardSide(row, col, size) || getOpenSide(this.mazeLayout, row, col);
-
-        // Tile EXIT: background scuro verde, bordo ciano
-        const exitTile = this.add.rectangle(
-          centerX,
-          centerY,
-          this.tileSize,
-          this.tileSize,
-          0x001100,
-          0.6
-        );
-        exitTile.setStrokeStyle(2, 0x00ffff, 1);
-        exitTile.setDepth(1);
-
-        // Glow solo sui tre lati chiusi
-        exitGlowInfo = { centerX, centerY, openSide };
-
-        // Save the pixel coordinates of the exit tile center for overlap detection
-        exitPos = { x: centerX, y: centerY };
+        if (this.mazeLayout[row][col] === 0) {
+          // Wall tile
+          const wall = this.add.rectangle(
+            centerX, centerY, this.tileSize, this.tileSize, WALL_FILL_COLOR
+          );
+          wall.setStrokeStyle(2, CYBER_CYAN, 1).setDepth(1);
+          this.physics.add.existing(wall, true);
+          this.topWalls.add(wall);
+          wallGlowList.push({ centerX, centerY });
+        } else {
+          // Corridor tile
+          if (row === this.entrance.y && col === this.entrance.x) {
+            const openSide = getInwardSide(row, col, size) || 
+                           getOpenSide(this.mazeLayout, row, col);
+            
+            const startTile = this.add.rectangle(
+              centerX, centerY, this.tileSize, this.tileSize, 0x110011, 0.6
+            );
+            startTile.setStrokeStyle(2, CYBER_CYAN, 1).setDepth(1);
+            startGlowInfo = { centerX, centerY, openSide };
+            startPos = { x: centerX, y: centerY };
+          } else if (row === this.exit.y && col === this.exit.x) {
+            const openSide = getInwardSide(row, col, size) || 
+                           getOpenSide(this.mazeLayout, row, col);
+            
+            const exitTile = this.add.rectangle(
+              centerX, centerY, this.tileSize, this.tileSize, 0x001100, 0.6
+            );
+            exitTile.setStrokeStyle(2, CYBER_CYAN, 1).setDepth(1);
+            exitGlowInfo = { centerX, centerY, openSide };
+            exitPos = { x: centerX, y: centerY };
+          }
+        }
       }
     }
-  }
-}
 
-// Ora disegniamo TUTTO il glow sopra alle tile (non viene più coperto)
-wallGlowList.forEach(({ centerX, centerY }) => {
-  drawTileGlow(glowLayer, centerX, centerY, this.tileSize, 0x00ffff, null);
-});
+    // Draw glows
+    wallGlowList.forEach(({ centerX, centerY }) => {
+      drawTileGlow(glowLayer, centerX, centerY, this.tileSize, CYBER_CYAN, null);
+    });
+    
+    if (startGlowInfo) {
+      drawTileGlow(
+        glowLayer,
+        startGlowInfo.centerX,
+        startGlowInfo.centerY,
+        this.tileSize,
+        CYBER_MAGENTA,
+        startGlowInfo.openSide
+      );
+    }
+    
+    if (exitGlowInfo) {
+      drawTileGlow(
+        glowLayer,
+        exitGlowInfo.centerX,
+        exitGlowInfo.centerY,
+        this.tileSize,
+        CYBER_GREEN,
+        exitGlowInfo.openSide
+      );
+    }
 
-if (startGlowInfo) {
-  drawTileGlow(
-    glowLayer,
-    startGlowInfo.centerX,
-    startGlowInfo.centerY,
-    this.tileSize,
-    BALL_COLOR,
-    startGlowInfo.openSide
-  );
-}
-
-if (exitGlowInfo) {
-  drawTileGlow(
-    glowLayer,
-    exitGlowInfo.centerX,
-    exitGlowInfo.centerY,
-    this.tileSize,
-    0x00ff00,
-    exitGlowInfo.openSide
-  );
-}
-
-
-
-    /* ---- Player (Baduz) + glow ---- */
+    // ===================================================
+    // 7.2.4 Player Setup
+    // ===================================================
     if (this.ant) this.ant.destroy();
-    const startFromSnapshot = this.restoreSnapshot && this.restoreSnapshot.player;
-    const spawn = startFromSnapshot ? this.restoreSnapshot.player : startPos;
+    const spawn = this.restoreSnapshot?.player ? this.restoreSnapshot.player : startPos;
 
-    // Scale the player (Baduz) radius relative to the current tile size so that it
-    // remains proportionate to the maze.  Use a minimum radius to avoid making it
-    // too small on very large mazes.
-    // Scale the player (Baduz) radius relative to the current tile size.  Increase
-    // the scaling factor slightly to make the ball larger.  Use a larger
-    // minimum radius to ensure visibility.
     const ballRadius = Math.max(12, Math.floor(this.tileSize * 0.25));
-    this.ant = this.add.circle(spawn.x, spawn.y, ballRadius, BALL_COLOR);
-    this.ant.setDepth(3);
+    this.ant = this.add.circle(spawn.x, spawn.y, ballRadius, BALL_COLOR)
+      .setDepth(3);
     this.ballRadius = ballRadius;
+    
     this.physics.add.existing(this.ant, false);
     this.ant.body.setCircle(ballRadius);
     this.ant.body.setCollideWorldBounds(true);
     this.ant.body.setBounce(0);
-    this.physics.add.collider(this.ant, this.topWalls);
+    // Collider with walls triggers wall bump effects
+    this.physics.add.collider(this.ant, this.topWalls, this.onWallHit, null, this);
 
-    // Glow “dinamico” che segue la palla
-    this.antGlow = this.add.graphics().setDepth((this.ant.depth || 0) - 1);
+    // Player glow effect
+    this.antGlow = this.add.graphics().setDepth(this.ant.depth - 1);
     this.events.on('update', () => {
       this.antGlow.clear();
-        BALL_GLOW_WIDTHS.forEach((w, i) => {
+      BALL_GLOW_WIDTHS.forEach((w, i) => {
         this.antGlow.lineStyle(w, BALL_GLOW_COLOR, BALL_GLOW_ALPHAS[i]);
         const r = this.ant.body?.radius || 10;
         this.antGlow.strokeCircle(this.ant.x, this.ant.y, r);
       });
     });
 
-    /* ---- Camera / input / goal ---- */
+    // ===================================================
+    // 7.2.5 Camera & Exit
+    // ===================================================
     this.cameras.main.startFollow(this.ant, true, 0.1, 0.1);
-    this.cameras.main.setZoom(1);
+    const mobileZoom = IS_MOBILE_VIEW ? 0.6 : 1.1;
+    this.cameras.main.setZoom(mobileZoom);
     this.cursors = this.input.keyboard.createCursorKeys();
-
+    // WASD support
+    this.wasd = this.input.keyboard.addKeys({ up: 'W', down: 'S', left: 'A', right: 'D' });
     this.exitPos = { x: exitPos.x, y: exitPos.y };
 
     this.levelCleared = false;
     const exitZone = this.add.zone(exitPos.x, exitPos.y, this.tileSize, this.tileSize);
     this.physics.add.existing(exitZone, true);
-    this.physics.add.overlap(this.ant, exitZone, () => {
-      if (this.levelCleared) return;
-      if (this.isPlayerFullyInsideExit()) {
-        this.levelCleared = true;
-        this.nextLevel();
-      }
-    }, null, this);
+    this.physics.add.overlap(
+      this.ant,
+      exitZone,
+      () => {
+        if (!this.levelCleared && this.isPlayerFullyInsideExit()) {
+          this.levelCleared = true;
+          this.playExitEffect();
+        }
+      },
+      null,
+      this
+    );
 
-    /* ---- Orbs (collezionabili) ---- */
+    // ===================================================
+    // 7.2.6 Orbs Collection
+    // ===================================================
     this.energyGroup = this.physics.add.group();
     const rngForOrbs = mulberry32((this.rngSeed >>> 0) + 999);
     const orbsCount = Math.max(3, 3 + Math.floor(this.currentLevel / 2));
@@ -555,33 +479,26 @@ if (exitGlowInfo) {
       const rx = Math.floor(rngForOrbs() * size);
       const ry = Math.floor(rngForOrbs() * size);
 
-      // Solo corridoi, non sull'entrata
-      if (
-        this.mazeLayout[ry][rx] === 1 &&
-        !(rx === this.entrance.x && ry === this.entrance.y)
-      ) {
-        // Position the orb using the tile offsets so that it aligns with the
-        // centered and scaled maze.  Scale the orb radius relative to the tile
-        // size to maintain proportions across different maze sizes.
+      if (this.mazeLayout[ry][rx] === 1 && 
+          !(rx === this.entrance.x && ry === this.entrance.y)) {
+        
         const px = rx * this.tileSize + this.tileSize / 2 + this.offsetX;
         const py = ry * this.tileSize + this.tileSize / 2 + this.offsetY;
-        // Scale the orb radius relative to the tile size.  Increase the factor
-        // to make orbs larger and use a larger minimum radius.
         const orbRadius = Math.max(6, Math.floor(this.tileSize * 0.18));
         const pulseRadius = Math.floor(orbRadius * 1.3);
 
-        // Orb base
-        const orb = this.add.circle(px, py, orbRadius, ORB_FILL_COLOR);
-        orb.setStrokeStyle(2, ORB_STROKE_COLOR, 1);
-
+        const orb = this.add.circle(px, py, orbRadius, ORB_FILL_COLOR)
+          .setStrokeStyle(2, ORB_STROKE_COLOR, 1);
+        
         this.physics.add.existing(orb);
         orb.body.setCircle(orbRadius);
         orb.body.setImmovable(true);
         this.energyGroup.add(orb);
 
-        // Pulse “respiro”
-        const pulse = this.add.circle(px, py, pulseRadius, ORB_FILL_COLOR, ORB_PULSE_OPACITY);
-        pulse.setDepth((orb.depth || 0) - 1);
+        // Pulse effect
+        const pulse = this.add.circle(px, py, pulseRadius, ORB_FILL_COLOR, ORB_PULSE_OPACITY)
+          .setDepth(orb.depth - 1);
+        
         orb.pulse = pulse;
         orb.pulseTween = this.tweens.add({
           targets: pulse,
@@ -592,8 +509,7 @@ if (exitGlowInfo) {
           yoyo: false,
           repeat: -1,
           onRepeat: () => {
-            pulse.setScale(1);
-            pulse.setAlpha(ORB_PULSE_OPACITY);
+            pulse.setScale(1).setAlpha(ORB_PULSE_OPACITY);
           }
         });
 
@@ -601,254 +517,307 @@ if (exitGlowInfo) {
       }
     }
 
-    // Raccolta Orbs
+    // Orb collection
     this.physics.add.overlap(
       this.ant,
       this.energyGroup,
       (ant, orb) => {
+        // Remove pulse effect and destroy orb
         if (orb.pulseTween) orb.pulseTween.stop();
-        if (orb.pulse && orb.pulse.destroy) orb.pulse.destroy();
+        if (orb.pulse?.destroy) orb.pulse.destroy();
+        const px = orb.x;
+        const py = orb.y;
         orb.destroy();
-
         this.coins++;
-        this.showToast('+1 Orb', '#00ffff');
+        // Play pickup FX
+        this.playOrbPickupEffect(px, py);
+        // Show toast with translation
+        const lang = window.getBaduzLang ? window.getBaduzLang() : 'en';
+        const t = window.baduzTranslations?.[lang] || {};
+        const msg = '+1 ' + (t.ORBS || 'Orb');
+        this.showToast(msg, '#00ffff');
         this.updateHUD();
       },
       null,
       this
     );
 
-    /* ---- Timer ---- */
+    // ===================================================
+    // 7.2.7 Feature Initialization
+    // Initialize modifiers and special elements depending on level.
+    // Speed modifier defaults to 1 and can be altered by zones.
+    this.speedModifier = 1;
+    this.lastMoveDir = { x: 1, y: 0 };
+
+    // Run-level persistent state (no save/load). Jump charges accumulate across levels.
+    window.baduzRun = window.baduzRun || { jumpCharges: 0 };
+    this.jumpCharges = window.baduzRun.jumpCharges || 0;
+    this.jumpActiveUntil = 0;
+    this.dashUntil = 0;
+    this.dashVec = { x: 1, y: 0 };
+    this.dashSpeed = PLAYER_SPEED * 3;
+    if (this.currentLevel >= 6 && this.currentLevel <= 10) {
+      this.setupKeyDoor(size);
+    }
+    if (this.currentLevel >= 11 && this.currentLevel <= 15) {
+      this.setupZones(size);
+    }
+    if (this.currentLevel >= 16 && this.currentLevel <= 20) {
+      this.setupHazards(size);
+      this.setupJumpPickups(size);
+    }
+
+    // ===================================================
+    // 7.2.7 Timer & Entrance Blocker
+    // ===================================================
     this.antStartPos = { x: startPos.x, y: startPos.y };
     this.timerStarted = false;
     this.startTime = 0;
-
-    /* ---- Entrance blocker ---- */
-    // To prevent the player from leaving the maze through the entrance after
-    // moving away from it, we prepare an invisible static blocker at the
-    // adjacent tile outside the maze.  It will be activated once the
-    // player leaves the start tile.  We determine the direction of the
-    // entrance relative to the maze: if the entrance is on the left edge
-    // (x === 0), the outside tile is to the left of the start; if on the
-    // right (x === size-1) then outside tile is to the right; similarly
-    // for top/bottom edges.  The blocker remains disabled until the
-    // player has moved off of the start tile.
     this.hasLeftStart = false;
     this.startBlocker = null;
+
     {
       const gridX = this.entrance.x;
       const gridY = this.entrance.y;
-      let outX = 0,
-        outY = 0;
-      if (gridX === 0) {
-        // Entrance on left edge: blocker goes one tile to the left
-        outX = startPos.x - this.tileSize;
-        outY = startPos.y;
-      } else if (gridX === size - 1) {
-        // Right edge: blocker goes to the right
-        outX = startPos.x + this.tileSize;
-        outY = startPos.y;
-      } else if (gridY === 0) {
-        // Top edge: blocker goes above
-        outX = startPos.x;
-        outY = startPos.y - this.tileSize;
-      } else if (gridY === size - 1) {
-        // Bottom edge: blocker goes below
-        outX = startPos.x;
-        outY = startPos.y + this.tileSize;
-      }
-      // Only create the blocker if the outside coordinates differ from start
+      let outX = 0, outY = 0;
+      
+      if (gridX === 0) { outX = startPos.x - this.tileSize; outY = startPos.y; }
+      else if (gridX === size - 1) { outX = startPos.x + this.tileSize; outY = startPos.y; }
+      else if (gridY === 0) { outX = startPos.x; outY = startPos.y - this.tileSize; }
+      else if (gridY === size - 1) { outX = startPos.x; outY = startPos.y + this.tileSize; }
+      
       if (outX !== 0 || outY !== 0) {
-        const blocker = this.add.rectangle(outX, outY, this.tileSize, this.tileSize);
-        blocker.setFillStyle(0xffffff, 0); // invisible
+        const blocker = this.add.rectangle(outX, outY, this.tileSize, this.tileSize)
+          .setFillStyle(0xffffff, 0);
         this.physics.add.existing(blocker, true);
-        // Add collider but disable it initially.  We'll enable once the
-        // player leaves the start tile.
         this.startBlocker = blocker;
         blocker.body.enable = false;
         this.physics.add.collider(this.ant, blocker);
       }
     }
 
-    /* ---- Shortcuts ---- */
+    // ===================================================
+    // 7.2.8 Input & Controls
+    // ===================================================
     this.input.keyboard.on('keydown-P', this.togglePause, this);
-    this.input.keyboard.on('keydown-S', () => {
-      this.handleSave();
-      this.showToast('Saved');
-    });
-    this.input.keyboard.on('keydown-L', () => {
-      this.handleLoad();
-      this.showToast('Loaded');
-    });
     this.input.keyboard.on('keydown-R', () => {
       this.handleReset();
-      this.showToast('Level reset');
+      this.showToast('Level Reset', CYBER_YELLOW);
     });
     this.input.keyboard.on('keydown-H', () => {
       this.useHint();
     });
 
-    /* ---- Bottoni UI ---- */
-    const withBtn = (id, fn) => {
-      // Avoid stacking multiple click handlers on the same button by using
-      // the onclick property instead of addEventListener.  Each time a
-      // new scene is created, this will overwrite any previous handler.
-      const el = document.getElementById(id);
-      if (el) el.onclick = () => fn.call(this);
-    };
-    // Map the Pause button to toggle pause/resume.  Save and Load buttons
-    // have been removed from the UI.
-    withBtn('btnPause', function () {
-      this.togglePause();
-    });
-    withBtn('btnReset', function () {
-      this.handleReset();
-      this.showToast('Level reset');
-    });
-    // Recenter the camera on the player when the user has panned around.
-    withBtn('btnCenter', function () {
-      // Resume following the player and center immediately.
-      this.cameras.main.startFollow(this.ant, true, 0.1, 0.1);
-      this.cameras.main.centerOn(this.ant.x, this.ant.y);
-    });
-    withBtn('btnHint', function () {
-      this.useHint();
+    this.input.keyboard.on('keydown-J', () => {
+      this.handleJump();
     });
 
-    // ----------------------------------------------------------------------
-    // Camera panning for exploration
-    // Allow the player to drag the canvas (mouse or touch) to explore the maze
-    // without moving the ant.  While dragging, the camera stops following
-    // the ant.  When released, the player can tap the "Center" button to
-    // recenter on the ant.
+    // Camera panning
     this.isDraggingCamera = false;
     this.dragStartX = 0;
     this.dragStartY = 0;
     this.cameraStartX = 0;
     this.cameraStartY = 0;
+    
     this.input.on('pointerdown', (pointer) => {
-      // If the pointer originates from a UI element (like a button or the
-      // on-screen d-pad), don't start dragging the camera.
       const eventTarget = pointer.event?.target;
-      if (
-        eventTarget &&
-        (eventTarget.closest('.controls-area') ||
-          eventTarget.closest('.main-header') ||
-          eventTarget.closest('.modal'))
-      ) {
+      if (eventTarget?.closest('.game-controls, .main-header, .modal, .quick-actions, .save-panel')) {
         return;
       }
       this.isDraggingCamera = true;
-      this.dragStartX = pointer.x;
-      this.dragStartY = pointer.y;
+      this.dragStartScreenX = pointer.x;
+      this.dragStartScreenY = pointer.y;
       this.cameraStartX = this.cameras.main.scrollX;
       this.cameraStartY = this.cameras.main.scrollY;
-      // Stop following the ant while dragging.
       this.cameras.main.stopFollow();
     });
+    
     this.input.on('pointermove', (pointer) => {
       if (!this.isDraggingCamera) return;
-      const dx = pointer.x - this.dragStartX;
-      const dy = pointer.y - this.dragStartY;
-      this.cameras.main.setScroll(
-        this.cameraStartX - dx,
-        this.cameraStartY - dy
-      );
+      const cam = this.cameras.main;
+      const dx = (pointer.x - this.dragStartScreenX) / (cam.zoom || 1);
+      const dy = (pointer.y - this.dragStartScreenY) / (cam.zoom || 1);
+      cam.setScroll(this.cameraStartX - dx, this.cameraStartY - dy);
     });
+    
     this.input.on('pointerup', () => {
       this.isDraggingCamera = false;
     });
 
-    const btnChange = document.getElementById('btnChangeName');
-    if (btnChange)
-      btnChange.addEventListener('click', () => {
-        changePlayerName();
-        this.updateHUD();
-      });
-
+    // Initialize HUD
     this.updateHUD();
+
+    // Show a short intro when a new tier of mechanics starts
+    this.maybeShowTierIntro();
+  }
+
+  maybeShowTierIntro() {
+    const lvl = this.currentLevel;
+    let tierKey = null;
+    if (lvl === 1) tierKey = 't1';
+    else if (lvl === 6) tierKey = 't2';
+    else if (lvl === 11) tierKey = 't3';
+    else if (lvl === 16) tierKey = 't4';
+
+    if (!tierKey || typeof window.showTierIntro !== 'function') return;
+
+    this.introPaused = true;
+    this.physics.pause();
+    this.ant.body.setVelocity(0);
+    window.showTierIntro(tierKey, () => {
+      this.introPaused = false;
+      if (!this.paused) this.physics.resume();
+    });
   }
 
   update() {
-    if (this.isGameOver || this.paused) return;
+    if (this.isGameOver || this.paused || this.introPaused) return;
 
     this.ant.body.setVelocity(0);
 
-    // If the player has moved away from the start tile, activate the
-    // entrance blocker so they cannot exit the maze through the entrance.
+    // Check if player left start
     if (!this.hasLeftStart) {
       const dx = Math.abs(this.ant.x - this.antStartPos.x);
       const dy = Math.abs(this.ant.y - this.antStartPos.y);
-      // Consider the player off the start tile once they have moved more
-      // than a quarter of a tile in any direction.  Using a fraction of
-      // tileSize avoids false positives due to jitter.
       if (dx > this.tileSize * 0.25 || dy > this.tileSize * 0.25) {
         this.hasLeftStart = true;
-        if (this.startBlocker && this.startBlocker.body) {
+        if (this.startBlocker?.body) {
           this.startBlocker.body.enable = true;
         }
       }
     }
-    // Support keyboard and on-screen mobile controls. If a direction is pressed on either,
-    // set the velocity accordingly. Keyboard input takes precedence over mobile input.
-    const mInput = (typeof window !== 'undefined' && window.mobileInput) ? window.mobileInput : null;
-    const mDir = mInput ? mInput.dir : null;
-    // Horizontal movement
-    if (this.cursors.left.isDown || mDir === 'left') {
-      this.ant.body.setVelocityX(-PLAYER_SPEED);
-    } else if (this.cursors.right.isDown || mDir === 'right') {
-      this.ant.body.setVelocityX(PLAYER_SPEED);
+
+    // Movement controls (unified analog/digital)
+    let vx = 0;
+    let vy = 0;
+    const mInput = window.mobileInput;
+    const analog = mInput?.analog;
+    const mDir = mInput?.dir;
+    if (analog) {
+      let ax = analog.x || 0;
+      let ay = analog.y || 0;
+      if (SNAP_8_DIR) {
+        const angle = Math.atan2(ay, ax);
+        const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+        ax = Math.cos(snapAngle);
+        ay = Math.sin(snapAngle);
+      }
+      vx = ax;
+      vy = ay;
+    } else {
+      // Keyboard or digital joystick
+      const w = this.wasd;
+      if (this.cursors.left.isDown || w?.left?.isDown || mDir === 'left') vx -= 1;
+      if (this.cursors.right.isDown || w?.right?.isDown || mDir === 'right') vx += 1;
+      if (this.cursors.up.isDown || w?.up?.isDown || mDir === 'up') vy -= 1;
+      if (this.cursors.down.isDown || w?.down?.isDown || mDir === 'down') vy += 1;
     }
-    // Vertical movement
-    if (this.cursors.up.isDown || mDir === 'up') {
-      this.ant.body.setVelocityY(-PLAYER_SPEED);
-    } else if (this.cursors.down.isDown || mDir === 'down') {
-      this.ant.body.setVelocityY(PLAYER_SPEED);
+    // Normalize diagonal movement
+    if (vx !== 0 || vy !== 0) {
+      const len = Math.sqrt(vx * vx + vy * vy);
+      vx /= len;
+      vy /= len;
+    }
+    if (vx !== 0 || vy !== 0) {
+      this.lastMoveDir = { x: vx, y: vy };
+    }
+    // Apply zone speed modifier (only on levels 11-15)
+    let speedMod = 1;
+    const cellX = Math.floor((this.ant.x - this.offsetX) / this.tileSize);
+    const cellY = Math.floor((this.ant.y - this.offsetY) / this.tileSize);
+    if (this.currentLevel >= 11 && this.currentLevel <= 15 && this.zoneMap) {
+      const zKey = `${cellX},${cellY}`;
+      const zType = this.zoneMap[zKey];
+      if (zType === 'slow') speedMod = 0.2;
+      else if (zType === 'ice') speedMod = 5.5;
+      else speedMod = 1;
+      this.speedModifier = speedMod;
+    } else {
+      this.speedModifier = 1;
+    }
+    // Dash override during Jump (more physical feel)
+    const now = Date.now();
+    if (this.dashUntil && now < this.dashUntil) {
+      vx = this.dashVec.x;
+      vy = this.dashVec.y;
+      speedMod = (this.dashSpeed || (PLAYER_SPEED*3)) / PLAYER_SPEED;
     }
 
-    if (!this.timerStarted) {
-      if (
-        Math.abs(this.ant.x - this.antStartPos.x) > 4 ||
-        Math.abs(this.ant.y - this.antStartPos.y) > 4
-      ) {
-        this.startTime = Date.now();
-        this.timerStarted = true;
+    // Hazard detection (ignored briefly during Jump)
+    if (this.hazardMap && !(this.jumpActiveUntil && Date.now() < this.jumpActiveUntil)) {
+      const hKey = `${cellX},${cellY}`;
+      if (this.hazardMap[hKey]) {
+        this.onHazardHit();
+        return;
       }
     }
+    this.ant.body.setVelocity(vx * PLAYER_SPEED * speedMod, vy * PLAYER_SPEED * speedMod);
 
+    // Start timer
+    if (!this.timerStarted && 
+        (Math.abs(this.ant.x - this.antStartPos.x) > 4 || 
+         Math.abs(this.ant.y - this.antStartPos.y) > 4)) {
+      this.startTime = Date.now();
+      this.timerStarted = true;
+    }
+
+    // Update timer display
     if (this.timerStarted) {
       const timerEl = document.getElementById('timer-display');
-      if (timerEl)
-        timerEl.textContent = this.formatTime(Date.now() - this.startTime);
+      if (timerEl) timerEl.textContent = this.formatTime(Date.now() - this.startTime);
     }
+
+    // Allow one bump per contact: trigger on transition into wall contact
+    const body = this.ant?.body;
+    if (body) {
+      const touchingWall =
+        (body.blocked && (body.blocked.up || body.blocked.down || body.blocked.left || body.blocked.right)) ||
+        (body.touching && (body.touching.up || body.touching.down || body.touching.left || body.touching.right));
+      if (touchingWall && !this.wasTouchingWall) {
+        this.playWallBumpEffect();
+      }
+      this.wasTouchingWall = touchingWall;
+    }
+
   }
 
-  /* --------------------------
-     PAUSA / TIMER
-     -------------------------- */
+  // =======================================================
+  // 7.3 GAME MECHANICS
+  // =======================================================
   togglePause() {
     if (!this.paused) {
       this.paused = true;
       this.pauseStart = Date.now();
       this.physics.pause();
+      
       if (this.pauseText) this.pauseText.destroy();
-      this.pauseText = this.add
-        .text(this.cameras.main.width / 2, this.cameras.main.height / 2, 'PAUSE', {
+      
+      this.pauseText = this.add.text(
+        this.cameras.main.width / 2,
+        this.cameras.main.height / 2,
+        'PAUSE',
+        {
           fontSize: '100px',
-          fill: '#00ff00',
-          fontFamily: 'Arial',
+          fill: `#${CYBER_GREEN.toString(16)}`,
+          fontFamily: 'Orbitron, Arial',
           stroke: '#000',
-          strokeThickness: 2
-        })
-        .setOrigin(0.5)
-        .setScrollFactor(0)
-        .setDepth(9999);
+          strokeThickness: 6,
+          shadow: {
+            offsetX: 0,
+            offsetY: 0,
+            color: `#${CYBER_GREEN.toString(16)}`,
+            blur: 20,
+            stroke: true
+          }
+        }
+      )
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(9999);
     } else {
       this.paused = false;
       const pausedDuration = Date.now() - this.pauseStart;
-      if (this.timerStarted) {
-        this.startTime += pausedDuration;
-      }
+      if (this.timerStarted) this.startTime += pausedDuration;
       this.physics.resume();
       if (this.pauseText) this.pauseText.destroy();
     }
@@ -864,36 +833,36 @@ if (exitGlowInfo) {
       .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
-  /* --------------------------
-     HINT (BFS + glow fade)
-     -------------------------- */
   useHint() {
     if (this.coins < HINT_COST) {
       this.showToast('Not enough orbs!', '#ffcc00');
       return;
     }
+    
     this.coins -= HINT_COST;
     this.updateHUD();
-
+    
     const path = this.findPath();
     if (!path) {
       this.showToast('No path found!', '#ff0000');
       return;
     }
 
-    // Disegno multi-layer per effetto glow
+    // Draw hint path
     for (let i = 0; i < HINT_GLOW_COLORS.length; i++) {
       const g = this.add.graphics();
       g.lineStyle(HINT_GLOW_WIDTHS[i], HINT_GLOW_COLORS[i], HINT_GLOW_ALPHAS[i]);
       g.beginPath();
-        path.forEach((p, j) => {
+      
+      path.forEach((p, j) => {
         const x = p.x * this.tileSize + this.tileSize / 2 + this.offsetX;
         const y = p.y * this.tileSize + this.tileSize / 2 + this.offsetY;
         if (j === 0) g.moveTo(x, y);
         else g.lineTo(x, y);
       });
+      
       g.strokePath();
-
+      
       this.tweens.add({
         targets: g,
         alpha: 0,
@@ -908,29 +877,63 @@ if (exitGlowInfo) {
   findPath() {
     const size = this.mazeLayout.length;
     const start = {
-      // Convert the ant's pixel position back into maze grid coordinates by
-      // subtracting the offset and dividing by the current tile size.
       x: Math.floor((this.ant.x - this.offsetX) / this.tileSize),
       y: Math.floor((this.ant.y - this.offsetY) / this.tileSize)
     };
     const end = this.exit;
-    const dirs = [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1]
-    ];
-
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    
     const key = (x, y) => `${x},${y}`;
-    const q = [start];
+    const queue = [start];
     const seen = new Set([key(start.x, start.y)]);
     const prev = {};
 
-    while (q.length) {
-      const c = q.shift();
-      if (c.x === end.x && c.y === end.y) {
+    while (queue.length) {
+      const current = queue.shift();
+      if (current.x === end.x && current.y === end.y) {
         const path = [];
-        let cur = c;
+        let cur = current;
+        while (cur) {
+          path.unshift(cur);
+          cur = prev[key(cur.x, cur.y)];
+        }
+        return path;
+      }
+      
+      for (const [dx, dy] of dirs) {
+        const nx = current.x + dx;
+        const ny = current.y + dy;
+        const nKey = key(nx, ny);
+        
+        if (nx >= 0 && ny >= 0 && nx < size && ny < size &&
+            this.mazeLayout[ny][nx] === 1 && !seen.has(nKey)) {
+          seen.add(nKey);
+          prev[nKey] = current;
+          queue.push({ x: nx, y: ny });
+        }
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Compute path in grid coordinates between two points (BFS on walkable tiles).
+   * Used to protect the unique solution path from hazards.
+   */
+  computePathCells(start, end) {
+    const size = this.mazeLayout.length;
+    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    const key = (x, y) => `${x},${y}`;
+    const queue = [{ x: start.x, y: start.y }];
+    const seen = new Set([key(start.x, start.y)]);
+    const prev = {};
+
+    while (queue.length) {
+      const current = queue.shift();
+      if (current.x === end.x && current.y === end.y) {
+        const path = [];
+        let cur = current;
         while (cur) {
           path.unshift(cur);
           cur = prev[key(cur.x, cur.y)];
@@ -938,76 +941,364 @@ if (exitGlowInfo) {
         return path;
       }
       for (const [dx, dy] of dirs) {
-        const nx = c.x + dx,
-          ny = c.y + dy;
-        if (
-          nx >= 0 &&
-          ny >= 0 &&
-          nx < size &&
-          ny < size &&
-          this.mazeLayout[ny][nx] === 1 &&
-          !seen.has(key(nx, ny))
-        ) {
-          seen.add(key(nx, ny));
-          prev[key(nx, ny)] = c;
-          q.push({ x: nx, y: ny });
-        }
+        const nx = current.x + dx;
+        const ny = current.y + dy;
+        if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+        if (this.mazeLayout[ny][nx] !== 1) continue;
+        const nK = key(nx, ny);
+        if (seen.has(nK)) continue;
+        seen.add(nK);
+        prev[nK] = current;
+        queue.push({ x: nx, y: ny });
       }
     }
     return null;
-    }
-
-  /* --------------------------
-     SAVE / LOAD / RESET
-     -------------------------- */
-  getSnapshot(full = false) {
-    const elapsed = this.timerStarted ? Date.now() - this.startTime : 0;
-    const base = {
-      currentLevel: this.currentLevel,
-      totalTime: this.totalTime + elapsed,
-      score: this.score,
-      coins: this.coins,
-      runSeed: this.runSeed,
-      rngSeed: this.rngSeed,
-      playerName: PLAYER_NAME
-    };
-    if (full) {
-      base.mazeLayout = this.mazeLayout;
-      base.entrance = this.entrance;
-      base.exit = this.exit;
-      if (this.ant) base.player = { x: this.ant.x, y: this.ant.y };
-    }
-    return base;
   }
 
-  handleSave() {
-    saveGameSnapshot(this.getSnapshot(true));
+  // =======================================================
+  // 7.6 EXTRA FEATURES (Key/Door, Zones, Hazards, FX)
+  // =======================================================
+
+  /**
+   * Setup a key and a door for levels 6–10. The door blocks the tile adjacent
+   * to the exit until the key is collected. The key is placed at a random
+   * corridor cell away from entrance/exit/door. The door is placed directly
+   * adjacent to the exit on the inward side. When the player collides with the
+   * door without the key, a toast is shown. Once the key is collected the
+   * door disappears and the player may exit.
+   */
+  setupKeyDoor(size) {
+    // Determine door location: one tile adjacent to exit on the inward side.
+    let doorGridX = this.exit.x;
+    let doorGridY = this.exit.y;
+    if (this.exit.x === 0) doorGridX = 1;
+    else if (this.exit.x === size - 1) doorGridX = size - 2;
+    else if (this.exit.y === 0) doorGridY = 1;
+    else if (this.exit.y === size - 1) doorGridY = size - 2;
+    // Coordinates in pixels
+    const doorCx = doorGridX * this.tileSize + this.tileSize / 2 + this.offsetX;
+    const doorCy = doorGridY * this.tileSize + this.tileSize / 2 + this.offsetY;
+    // Create door visual
+    this.door = this.add.rectangle(
+      doorCx,
+      doorCy,
+      this.tileSize,
+      this.tileSize,
+      0x330000,
+      0.8
+    ).setStrokeStyle(2, CYBER_RED, 1).setDepth(2);
+    this.physics.add.existing(this.door, true);
+    // Flag for key
+    this.hasKey = false;
+    // Door collider logic
+    this.doorCollider = this.physics.add.collider(this.ant, this.door, () => {
+      if (this.hasKey) {
+        // remove door and collider
+        if (this.doorCollider) this.doorCollider.destroy();
+        if (this.door) this.door.destroy();
+      } else {
+        const lang = window.getBaduzLang ? window.getBaduzLang() : 'en';
+        const t = window.baduzTranslations?.[lang] || {};
+        this.showToast(t.needKey || 'Find the key!', '#ff0000');
+      }
+    }, null, this);
+    // Place key: choose random corridor cell not at entrance, exit or door
+    let kx = 0;
+    let ky = 0;
+    let tries = 0;
+    do {
+      kx = Math.floor(Math.random() * size);
+      ky = Math.floor(Math.random() * size);
+      tries++;
+      // Avoid infinite loop
+      if (tries > 500) break;
+    } while (
+      this.mazeLayout[ky][kx] === 0 ||
+      (kx === this.entrance.x && ky === this.entrance.y) ||
+      (kx === this.exit.x && ky === this.exit.y) ||
+      (kx === doorGridX && ky === doorGridY)
+    );
+    const keyCx = kx * this.tileSize + this.tileSize / 2 + this.offsetX;
+    const keyCy = ky * this.tileSize + this.tileSize / 2 + this.offsetY;
+    const keyRadius = Math.max(6, Math.floor(this.tileSize * 0.2));
+    this.keyItem = this.add.circle(keyCx, keyCy, keyRadius, 0xffdd00)
+      .setStrokeStyle(2, 0xffaa00, 1)
+      .setDepth(2);
+    this.physics.add.existing(this.keyItem);
+    this.keyItem.body.setCircle(keyRadius);
+    this.keyItem.body.setImmovable(true);
+    this.physics.add.overlap(this.ant, this.keyItem, () => {
+      this.hasKey = true;
+      this.keyItem.destroy();
+      const lang = window.getBaduzLang ? window.getBaduzLang() : 'en';
+      const t = window.baduzTranslations?.[lang] || {};
+      this.showToast(t.keyCollected || 'Key collected!', '#ffff00');
+      // Change door tint to indicate unlocked
+      if (this.door) this.door.setFillStyle(0x003300, 0.8);
+    }, null, this);
   }
 
-  handleLoad() {
-    const snap = loadGameSnapshot();
-    if (!snap) {
-      this.showToast('No save found', '#ffcc00');
+  /**
+   * Setup speed-modifying zones for levels 11–15. Creates a number of zone
+   * rectangles on random corridor tiles. Zones can be 'slow' (reduce speed)
+   * or 'ice' (increase speed / slippery). The zone positions are tracked in
+   * this.zoneMap keyed by "row,col" and used in update() to apply modifiers.
+   */
+  setupZones(size) {
+    this.zoneMap = {};
+    const zoneCount = Math.max(3, Math.floor(size / 4));
+    for (let i = 0; i < zoneCount; i++) {
+      let zx = 0;
+      let zy = 0;
+      let attempts = 0;
+      do {
+        zx = Math.floor(Math.random() * size);
+        zy = Math.floor(Math.random() * size);
+        attempts++;
+        if (attempts > 500) break;
+      } while (
+        this.mazeLayout[zy][zx] === 0 ||
+        (zx === this.entrance.x && zy === this.entrance.y) ||
+        (zx === this.exit.x && zy === this.exit.y)
+      );
+      const type = (i % 2 === 0) ? 'slow' : 'ice';
+      const zoneKey = `${zx},${zy}`;
+      this.zoneMap[zoneKey] = type;
+      const cx = zx * this.tileSize + this.tileSize / 2 + this.offsetX;
+      const cy = zy * this.tileSize + this.tileSize / 2 + this.offsetY;
+      const rect = this.add.rectangle(
+        cx,
+        cy,
+        this.tileSize,
+        this.tileSize,
+        type === 'slow' ? 0x004400 : 0x001144,
+        0.4
+      ).setStrokeStyle(2, type === 'slow' ? 0x00aa00 : 0x0033aa, 0.8)
+      .setDepth(0.5);
+    }
+  }
+
+  /**
+   * Setup hazard tiles for levels 16–20. Hazard tiles instantly reset the
+   * level when the player steps on them. Hazard positions are tracked in
+   * this.hazardMap keyed by "row,col" and used in update() to detect
+   * collisions. Visual red tiles are added for feedback.
+   */
+  setupHazards(size) {
+    this.hazardMap = {};
+    // Protect the unique solution path (perfect maze) so the level is always completable.
+    const protectedPath = this.computePathCells(this.entrance, this.exit);
+    const protectedSet = new Set((protectedPath || []).map(p => `${p.x},${p.y}`));
+
+    const hazardCount = Math.max(3, Math.floor(size / 5));
+    for (let i = 0; i < hazardCount; i++) {
+      let hx = 0;
+      let hy = 0;
+      let attempts = 0;
+      do {
+        hx = Math.floor(Math.random() * size);
+        hy = Math.floor(Math.random() * size);
+        attempts++;
+        if (attempts > 500) break;
+      } while (
+        this.mazeLayout[hy][hx] === 0 ||
+        (hx === this.entrance.x && hy === this.entrance.y) ||
+        (hx === this.exit.x && hy === this.exit.y) ||
+        protectedSet.has(`${hx},${hy}`)
+      );
+      const hazardKey = `${hx},${hy}`;
+      this.hazardMap[hazardKey] = true;
+      const cx = hx * this.tileSize + this.tileSize / 2 + this.offsetX;
+      const cy = hy * this.tileSize + this.tileSize / 2 + this.offsetY;
+      this.add.rectangle(
+        cx,
+        cy,
+        this.tileSize,
+        this.tileSize,
+        0x550000,
+        0.5
+      ).setStrokeStyle(2, 0xff0000, 0.9).setDepth(1);
+    }
+  }
+
+  /**
+   * Setup Jump pickups (springs) for levels 16–20.
+   * Each pickup grants 1 Jump charge. Jump lets you ignore hazards
+   * for a brief window (skill/timing mechanic).
+   */
+  setupJumpPickups(size) {
+    this.jumpGroup = this.physics.add.staticGroup();
+    const count = Math.max(1, Math.floor(size / 5));
+    let placed = 0;
+    let attempts = 0;
+    const forbidden = new Set([
+      `${this.entrance.x},${this.entrance.y}`,
+      `${this.exit.x},${this.exit.y}`
+    ]);
+    if (this.hazardMap) {
+      Object.keys(this.hazardMap).forEach(k => forbidden.add(k));
+    }
+    while (placed < count && attempts < 2000) {
+      attempts++;
+      const gx = Math.floor(Math.random() * size);
+      const gy = Math.floor(Math.random() * size);
+      const k = `${gx},${gy}`;
+      if (forbidden.has(k)) continue;
+      if (this.mazeLayout[gy][gx] !== 1) continue;
+      // Place
+      const cx = gx * this.tileSize + this.tileSize / 2 + this.offsetX;
+      const cy = gy * this.tileSize + this.tileSize / 2 + this.offsetY;
+      const spring = this.add.circle(cx, cy, Math.max(6, this.tileSize * 0.14), CYBER_GRAY, 0.92);
+      spring.setStrokeStyle(2, 0xe6ebf5, 1);
+      this.jumpGroup.add(spring);
+      spring._jumpKey = k;
+      forbidden.add(k);
+      placed++;
+    }
+
+    this.physics.add.overlap(this.ant, this.jumpGroup, (ant, spring) => {
+      spring.destroy();
+      this.jumpCharges = (this.jumpCharges || 0) + 1;
+      if (window.baduzRun) window.baduzRun.jumpCharges = this.jumpCharges;
+      this.showToast('+1 Jump', '#c5c9d3');
+      this.updateHUD();
+    }, null, this);
+  }
+
+  /** Activate Jump if you have charges */
+  handleJump() {
+    if (this.paused || this.introPaused) return;
+    if (!this.jumpCharges || this.jumpCharges <= 0) {
+      this.showToast('No Jump charges', '#c5c9d3');
       return;
     }
-    this.scene.stop('MazeScene');
-    this.scene.start('MazeScene', { snapshot: snap });
+
+    // Consume a charge
+    this.jumpCharges -= 1;
+    if (window.baduzRun) window.baduzRun.jumpCharges = this.jumpCharges;
+    this.updateHUD();
+
+    // Activate hazard immunity window
+    const start = Date.now();
+    this.jumpActiveUntil = start + 280; // ~one tile window
+
+    // Dash direction = last movement direction (fallback to right)
+    const d = this.lastMoveDir || { x: 1, y: 0 };
+    const len = Math.hypot(d.x, d.y) || 1;
+    this.dashVec = { x: d.x / len, y: d.y / len };
+    this.dashSpeed = PLAYER_SPEED * 3.2;
+    this.dashUntil = start + 180;
+
+    // Camera punch + slight zoom
+    this.cameras.main.shake(90, 0.004);
+    this.cameras.main.zoomTo(1.05, 120);
+    this.time.delayedCall(220, () => this.cameras.main.zoomTo(1.0, 160));
+
+    // Visual: glow ring + squash/stretch
+    const glow = this.add.circle(this.ant.x, this.ant.y, Math.max(12, this.tileSize * 0.28), CYBER_GRAY, 0.28);
+    glow.setDepth(10);
+    this.tweens.add({ targets: glow, alpha: 0, scale: 2.0, duration: 220, onComplete: () => glow.destroy() });
+
+    this.tweens.add({
+      targets: this.ant,
+      scaleX: 1.18,
+      scaleY: 0.88,
+      yoyo: true,
+      duration: 120,
+      ease: 'Sine.easeOut'
+    });
+
+    // Afterimages to communicate motion
+    const ghosts = 5;
+    for (let i = 1; i <= ghosts; i++) {
+      this.time.delayedCall(i * 25, () => {
+        const g = this.add.circle(this.ant.x, this.ant.y, Math.max(3, this.tileSize * 0.12), CYBER_GRAY, 0.18);
+        g.setDepth(5);
+        this.tweens.add({ targets: g, alpha: 0, duration: 240, onComplete: () => g.destroy() });
+      });
+    }
   }
 
+  /**
+   * Effects for orb pickup: creates a small burst of particles and a brief
+   * camera shake.
+   */
+  playOrbPickupEffect(x, y) {
+    // Small camera shake
+    this.cameras.main.shake(120, 0.004);
+    // Create radial particles using graphics and tween
+    const particles = [];
+    const count = 8;
+    const colors = [CYBER_GREEN, CYBER_CYAN, CYBER_YELLOW];
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count;
+      const px = x;
+      const py = y;
+      const dot = this.add.circle(px, py, 2, colors[i % colors.length]);
+      dot.setDepth(6);
+      particles.push(dot);
+      this.tweens.add({
+        targets: dot,
+        x: px + Math.cos(angle) * this.tileSize * 0.4,
+        y: py + Math.sin(angle) * this.tileSize * 0.4,
+        alpha: 0,
+        duration: 300,
+        onComplete: () => dot.destroy()
+      });
+    }
+  }
+
+  /**
+   * Effect for wall bump: tiny shake and flash.
+   */
+  playWallBumpEffect() {
+    this.cameras.main.shake(80, 0.002);
+  }
+
+  /**
+   * Effect when player reaches the exit: freeze for 120ms, flash and then
+   * proceed to next level.
+   */
+  playExitEffect() {
+    // Flash screen
+    this.cameras.main.flash(120, 255, 255, 255);
+    // Freeze physics briefly
+    this.physics.pause();
+    // After 120ms resume and go to next level
+    this.time.delayedCall(120, () => {
+      this.physics.resume();
+      this.nextLevel();
+    });
+  }
+
+  /**
+   * Wall collision callback. Triggered when the player collides with a wall
+   * tile. Plays a wall bump effect.
+   */
+  onWallHit() {
+    // Keep collision resolution but defer shake logic to update() state change
+    this.wallContacting = true;
+  }
+
+  /**
+   * Called when the player steps on a hazard tile. Restarts the level and
+   * shows a toast.
+   */
+  onHazardHit() {
+    const lang = window.getBaduzLang ? window.getBaduzLang() : 'en';
+    const t = window.baduzTranslations?.[lang] || {};
+    this.showToast(t.hazard || 'Hazard!', '#ff0066');
+    // Reset level state (restarts from current level)
+    this.handleReset();
+  }
+
+  // =======================================================
+  // 7.4 RESET
+  // =======================================================
   handleReset() {
     const sameLevel = this.currentLevel;
     const sameRunSeed = this.runSeed;
     const sameLevelSeed = makeLevelSeed(sameRunSeed, sameLevel);
-
-    saveGameSnapshot({
-      currentLevel: sameLevel,
-      totalTime: this.totalTime,
-      score: this.score,
-      coins: this.coins,
-      runSeed: sameRunSeed,
-      rngSeed: sameLevelSeed,
-      playerName: PLAYER_NAME
-    });
 
     this.scene.restart({
       currentLevel: sameLevel,
@@ -1015,36 +1306,25 @@ if (exitGlowInfo) {
       score: this.score,
       coins: this.coins,
       runSeed: sameRunSeed,
-      rngSeed: sameLevelSeed,
-      snapshot: null
+      rngSeed: sameLevelSeed
     });
   }
 
-  /* --------------------------
-     AVANZA LIVELLO / FINE DEMO
-     -------------------------- */
-
-  /* --------------------------
-     CHECK USCITA (EXIT)
-     - evita completamento repentino: richiede che l'intera palla
-       sia entrata nella tile EXIT (non basta toccare il bordo esposto)
-     -------------------------- */
+  // =======================================================
+  // 7.5 LEVEL PROGRESSION
+  // =======================================================
   isPlayerFullyInsideExit() {
     if (!this.ant || !this.exitPos) return false;
-
-    const r =
-      (this.ant.body && typeof this.ant.body.radius === 'number')
-        ? this.ant.body.radius
-        : (this.ballRadius || 0);
-
+    
+    const r = this.ant.body?.radius ?? this.ballRadius ?? 0;
     const half = this.tileSize / 2;
     const margin = half - r;
+    
     if (margin <= 0) return false;
-
+    
     const dx = Math.abs(this.ant.x - this.exitPos.x);
     const dy = Math.abs(this.ant.y - this.exitPos.y);
-
-    // La palla deve stare interamente dentro la cella EXIT
+    
     return dx <= margin && dy <= margin;
   }
 
@@ -1054,90 +1334,25 @@ if (exitGlowInfo) {
       levelTime = Date.now() - this.startTime;
       this.totalTime += levelTime;
     }
+    
     const gain = computeLevelScore(this.currentLevel, levelTime);
     this.score += gain;
     this.showToast(`+${gain} pts`, '#00ff00');
     this.updateHUD();
 
     this.currentLevel++;
-    saveGameSnapshot({
-      currentLevel: this.currentLevel,
-      totalTime: this.totalTime,
-      score: this.score,
-      coins: this.coins,
-      runSeed: this.runSeed,
-      rngSeed: makeLevelSeed(this.runSeed, this.currentLevel),
-      playerName: PLAYER_NAME
-    });
 
-    // Demo estesa fino a 20
+    // Check for game completion
     if (this.currentLevel > 20) {
-      this.isGameOver = true;
-      this.cameras.main.stopFollow();
-      this.cameras.main.centerOn(
-        this.game.config.width / 2,
-        this.game.config.height / 2
-      );
-
-      const totalSeconds = Math.floor(this.totalTime / 1000);
-      const hours = Math.floor(totalSeconds / 3600);
-      const minutes = Math.floor((totalSeconds % 3600) / 60);
-      const seconds = totalSeconds % 60;
-      const formattedTotal = `${hours.toString().padStart(2, '0')}:${minutes
-        .toString()
-        .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-      // Schermata finale: pannello + testi
-      const cx = this.cameras.main.centerX;
-      const cy = this.cameras.main.centerY;
-
-      const endContainer = this.add
-        .container(cx, cy)
-        .setScrollFactor(0)
-        .setDepth(2000);
-
-      const title = this.add
-        .text(0, -35, `DEMO COMPLETED!\nThank you for playing, ${PLAYER_NAME}!`, {
-          fontSize: '40px',
-          fill: '#ffffff',
-          fontFamily: 'Arial',
-          align: 'center'
-        })
-        .setOrigin(0.5);
-
-      const stats = this.add
-        .text(0, 60, `Total Time: ${formattedTotal}\nScore: ${this.score}`, {
-          fontSize: '24px',
-          fill: '#00ff00',
-          fontFamily: 'Arial',
-          stroke: '#000',
-          strokeThickness: 2,
-          align: 'center'
-        })
-        .setOrigin(0.5);
-
-      const padX = 30,
-        padY = 30,
-        gap = 20;
-      const panelWidth = Math.max(title.width, stats.width) + padX * 2;
-      const panelHeight = title.height + stats.height + gap + padY * 2;
-
-      const panel = this.add
-        .rectangle(0, 10, panelWidth, panelHeight, 0x000000, 0.85)
-        .setStrokeStyle(2, 0x00ffff, 0.8);
-
-      endContainer.add([panel, title, stats]);
-
-      this.currentLevel = 21;
-      this.physics.pause();
-      this.ant.body.setVelocity(0);
+      this.showGameCompletion();
       return;
     }
 
-    // Reset timer e avvia livello seguente
+    // Reset and load next level
     this.isGameOver = false;
     this.timerStarted = false;
     this.startTime = 0;
+    
     const timerEl = document.getElementById('timer-display');
     if (timerEl) timerEl.textContent = '00:00:00';
 
@@ -1151,16 +1366,85 @@ if (exitGlowInfo) {
     });
   }
 
-  /* --------------------------
-     GENERAZIONE LABIRINTO
-     -------------------------- */
+  showGameCompletion() {
+    this.isGameOver = true;
+    this.cameras.main.stopFollow();
+    this.cameras.main.centerOn(this.game.config.width / 2, this.game.config.height / 2);
+
+    const totalSeconds = Math.floor(this.totalTime / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    const formattedTotal = `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+    // Cyberpunk completion screen
+    const cx = this.cameras.main.centerX;
+    const cy = this.cameras.main.centerY;
+
+    const endContainer = this.add.container(cx, cy)
+      .setScrollFactor(0)
+      .setDepth(2000);
+
+    const panelWidth = 600;
+    const panelHeight = 400;
+    const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, 0x000000, 0.9)
+      .setStrokeStyle(4, CYBER_CYAN, 0.8);
+
+    const title = this.add.text(0, -100, 
+      `DEMO COMPLETED!\nThank you for playing, ${PLAYER_NAME}!`,
+      {
+        fontSize: '40px',
+        fill: `#${CYBER_MAGENTA.toString(16)}`,
+        fontFamily: 'Orbitron, Arial',
+        align: 'center',
+        stroke: '#000',
+        strokeThickness: 4,
+        shadow: {
+          offsetX: 0,
+          offsetY: 0,
+          color: `#${CYBER_MAGENTA.toString(16)}`,
+          blur: 20,
+          stroke: true
+        }
+      }
+    ).setOrigin(0.5);
+
+    const stats = this.add.text(0, 40,
+      `Total Time: ${formattedTotal}\nFinal Score: ${this.score}`,
+      {
+        fontSize: '30px',
+        fill: `#${CYBER_GREEN.toString(16)}`,
+        fontFamily: 'Orbitron, Arial',
+        stroke: '#000',
+        strokeThickness: 3,
+        align: 'center',
+        shadow: {
+          offsetX: 0,
+          offsetY: 0,
+          color: `#${CYBER_GREEN.toString(16)}`,
+          blur: 15,
+          stroke: true
+        }
+      }
+    ).setOrigin(0.5);
+
+    endContainer.add([panel, title, stats]);
+    this.currentLevel = 21;
+    this.physics.pause();
+    this.ant.body.setVelocity(0);
+  }
+
+  // =======================================================
+  // 7.6 MAZE GENERATION
+  // =======================================================
   generateMaze(level, rng) {
     const size = 5 + level * 2;
-    const maze = Array(size)
-      .fill()
-      .map(() => Array(size).fill(0));
+    const maze = Array(size).fill().map(() => Array(size).fill(0));
     this.generatePrimMaze(maze, rng);
     const [start, end] = this.placeEntranceExit(maze, rng);
+    
     return {
       maze,
       entrance: { x: start.x, y: start.y },
@@ -1173,11 +1457,13 @@ if (exitGlowInfo) {
     const size = maze.length;
     let walls = [];
     const possibleCells = [];
+    
     for (let y = 1; y < size - 1; y += 2) {
       for (let x = 1; x < size - 1; x += 2) {
         possibleCells.push({ x, y });
       }
     }
+    
     const startCell = possibleCells[Math.floor(rng() * possibleCells.length)];
     maze[startCell.y][startCell.x] = 1;
     this.addWalls(startCell.x, startCell.y, maze, walls);
@@ -1186,6 +1472,7 @@ if (exitGlowInfo) {
       const randomIndex = Math.floor(rng() * walls.length);
       const wall = walls.splice(randomIndex, 1)[0];
       const { wx, wy, cx, cy } = wall;
+      
       if (maze[cy][cx] === 0) {
         maze[wy][wx] = 1;
         maze[cy][cx] = 1;
@@ -1202,18 +1489,14 @@ if (exitGlowInfo) {
       { dx: -2, dy: 0 },
       { dx: 2, dy: 0 }
     ];
+    
     dirs.forEach((d) => {
-      const nx = x + d.dx,
-        ny = y + d.dy;
-      if (
-        nx > 0 &&
-        nx < size - 1 &&
-        ny > 0 &&
-        ny < size - 1 &&
-        maze[ny][nx] === 0
-      ) {
-        const wx = x + d.dx / 2,
-          wy = y + d.dy / 2;
+      const nx = x + d.dx;
+      const ny = y + d.dy;
+      
+      if (nx > 0 && nx < size - 1 && ny > 0 && ny < size - 1 && maze[ny][nx] === 0) {
+        const wx = x + d.dx / 2;
+        const wy = y + d.dy / 2;
         walls.push({ wx, wy, cx: nx, cy: ny });
       }
     });
@@ -1241,31 +1524,111 @@ if (exitGlowInfo) {
       maze[ey][1] = 1;
       maze[ey][size - 2] = 1;
     }
+    
     maze[start.y][start.x] = 1;
     maze[end.y][end.x] = 1;
     return [start, end];
   }
 }
 
-/* =========================
-   PHASER – AVVIO GIOCO
-   ========================= */
-const config = {
-  type: Phaser.CANVAS,
-  width: 1000,
-  height: 700,
-  canvas: document.getElementById('gameCanvas'),
-  transparent: true, // canvas trasparente fuori dal disegno
-  physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
-  scene: MazeScene
+// =========================================================
+// 8. PHASER GAME INITIALIZATION
+// =========================================================
+
+function getCanvasFrameSize() {
+  const frame = document.querySelector('.canvas-wrapper') || document.querySelector('.canvas-frame');
+  if (!frame) {
+    // Fallback: use current viewport
+    return { width: Math.max(320, window.innerWidth), height: Math.max(240, window.innerHeight) };
+  }
+  const r = frame.getBoundingClientRect();
+  // Guard against 0 during first layout pass
+  const w = Math.max(320, Math.floor(r.width || 0));
+  const h = Math.max(240, Math.floor(r.height || 0));
+  return { width: w, height: h };
+}
+
+let game = null;
+
+function initPhaserGame() {
+  const { width, height } = getCanvasFrameSize();
+
+  const config = {
+    type: Phaser.CANVAS,
+    width,
+    height,
+    canvas: document.getElementById('gameCanvas'),
+    transparent: true,
+    physics: { 
+      default: 'arcade', 
+      arcade: { 
+        gravity: { y: 0 }, 
+        debug: false 
+      } 
+    },
+    scene: MazeScene
+  };
+
+  game = new Phaser.Game(config);
+  window.game = game; // Expose game globally for UI access
+
+  // Keep Phaser internal size aligned with the visible container (desktop responsive)
+  const frame = document.querySelector('.canvas-wrapper') || document.querySelector('.canvas-frame');
+  if (frame && window.ResizeObserver) {
+    const ro = new ResizeObserver(() => {
+      if (!game || !game.scale) return;
+      const s = getCanvasFrameSize();
+      game.scale.resize(s.width, s.height);
+    });
+    ro.observe(frame);
+  } else {
+    // Fallback
+    window.addEventListener('resize', () => {
+      if (!game || !game.scale) return;
+      const s = getCanvasFrameSize();
+      game.scale.resize(s.width, s.height);
+    });
+  }
+}
+
+// Boot after DOM is ready (safe on desktop + mobile)
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPhaserGame);
+} else {
+  initPhaserGame();
+}
+
+window.game = game; // Expose game globally for UI access
+
+// =========================================================
+// 9. GLOBAL UTILITY FUNCTIONS FOR UI INTEGRATION
+// =========================================================
+window.updateOrbAnimation = function(currentOrbs) {
+  const orbFill = document.getElementById('orbFill');
+  if (!orbFill) return;
+  
+  const maxOrbs = 10;
+  const percentage = Math.min((currentOrbs / maxOrbs) * 100, 100);
+  orbFill.style.width = `${percentage}%`;
+  
+  if (currentOrbs > (window.lastOrbs || 0)) {
+    orbFill.classList.add('pulse');
+    setTimeout(() => orbFill.classList.remove('pulse'), 300);
+  }
+  window.lastOrbs = currentOrbs;
 };
 
-const game = new Phaser.Game(config);
-
-/* =========================
-   AUTOSAVE ON EXIT
-   ========================= */
-window.addEventListener('beforeunload', () => {
-  const scene = game?.scene?.keys?.['MazeScene'];
-  if (scene) saveGameSnapshot(scene.getSnapshot(true));
-});
+window.updateLevelDots = function(currentLevel) {
+  const dots = document.querySelectorAll('.level-dots .dot');
+  if (!dots.length) return;
+  
+  dots.forEach(dot => {
+    dot.classList.remove('active');
+    dot.style.background = 'rgba(0, 243, 255, 0.3)';
+  });
+  
+  const levelIndex = Math.min(currentLevel - 1, 4);
+  for (let i = 0; i <= levelIndex; i++) {
+    if (dots[i]) dots[i].classList.add('active');
+  }
+};
