@@ -290,6 +290,10 @@ document.addEventListener('DOMContentLoaded', function() {
       isActive = true;
       joystickBase.classList.add('active');
       joystickBase.setPointerCapture?.(e.pointerId);
+      // Prevent text selection while dragging the joystick
+      document.body.style.userSelect = 'none';
+      document.body.style.webkitUserSelect = 'none';
+      if (window.getSelection) window.getSelection().removeAllRanges();
       updateJoystick(e.clientX, e.clientY);
     }
 
@@ -306,6 +310,9 @@ document.addEventListener('DOMContentLoaded', function() {
       window.mobileInput.analog = null;
       joystickCap.style.transform = 'translate(0, 0)';
       joystickBase.classList.remove('active');
+      // Restore text selection
+      document.body.style.userSelect = '';
+      document.body.style.webkitUserSelect = '';
     }
 
     joystickBase.addEventListener('pointerdown', (e) => {
@@ -314,13 +321,17 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     window.addEventListener('pointermove', (e) => {
       if (!isActive) return;
-      e.preventDefault?.();
+      e.preventDefault();
       moveJoystick(e);
     }, { passive: false });
     window.addEventListener('pointerup', (e) => stopJoystick(e));
     window.addEventListener('pointercancel', (e) => stopJoystick(e));
-    // Prevent context menu on joystick
     joystickBase.addEventListener('contextmenu', (e) => e.preventDefault());
+    joystickBase.addEventListener('selectstart', (e) => e.preventDefault());
+    joystickBase.addEventListener('dragstart', (e) => e.preventDefault());
+    document.addEventListener('selectstart', (e) => {
+      if (isActive) e.preventDefault();
+    });
   }
   
   // ====================
