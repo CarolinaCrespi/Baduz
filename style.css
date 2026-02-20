@@ -1065,6 +1065,9 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 15px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
 }
 
 .joystick-base {
