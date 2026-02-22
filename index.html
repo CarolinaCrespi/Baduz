@@ -29,7 +29,7 @@
         </h1>
         <div class="title-sub">BADUZ</div>
       </div>
-      
+
       <div class="header-controls">
         <button id="soundToggle" class="icon-btn" aria-label="Toggle sound">
           <i class="fas fa-volume-up"></i>
@@ -40,30 +40,26 @@
         <button id="aboutBtn" class="icon-btn info" aria-label="About game">
           <i class="fas fa-info-circle"></i>
         </button>
-
-        <!-- Language toggle button. Allows switching between English and Italian. -->
         <button id="langToggle" class="icon-btn" aria-label="Toggle language">
           <i class="fas fa-language"></i>
         </button>
       </div>
     </header>
 
-    <!-- Tier Intro Modal (shown when new mechanics are introduced) -->
+    <!-- Tier Intro Modal -->
     <div id="tierModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-title" id="tierModalTitle"><i class="fas fa-bolt"></i> NEW MECHANICS</h2>
-
-        <div class="modal-actions">
-          <button id="tierLangToggle" class="icon-btn" aria-label="Toggle language">
-            <i class="fas fa-language"></i>
-          </button>
-          <button id="closeTier" class="close-button" aria-label="Close">
-            <i class="fas fa-times"></i>
-          </button>
+          <div class="modal-actions">
+            <button id="tierLangToggle" class="icon-btn" aria-label="Toggle language">
+              <i class="fas fa-language"></i>
+            </button>
+            <button id="closeTier" class="close-button" aria-label="Close">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
         </div>
-
-</div>
         <div class="modal-body">
           <div class="modal-text" id="tierModalText"></div>
           <div class="tip-box">
@@ -94,13 +90,13 @@
             <div class="logo-sphere"></div>
             <span class="logo-text">BADUZ</span>
           </div>
-          
+
           <p class="modal-text" id="aboutLeadText">
-            <i class="fas fa-gamepad"></i> <strong>BADUZ</strong> is a sentient neon sphere trapped in an ever-evolving cyber maze. 
-            Your mission: navigate through complex labyrinths, collect <span class="accent-orb"><i class="fas fa-gem"></i> Energy Orbs</span>, 
+            <i class="fas fa-gamepad"></i> <strong>BADUZ</strong> is a sentient neon sphere trapped in an ever-evolving cyber maze.
+            Your mission: navigate through complex labyrinths, collect <span class="accent-orb"><i class="fas fa-gem"></i> Energy Orbs</span>,
             and find the exit before time runs out.
           </p>
-          
+
           <div class="feature-grid">
             <div class="feature">
               <div class="feature-icon"><i class="fas fa-sitemap"></i></div>
@@ -117,7 +113,7 @@
               <h3 id="feat3Title">Score System</h3>
               <p id="feat3Desc">Speed & efficiency matter</p>
             </div>
-              <div class="feature">
+            <div class="feature">
               <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
               <h3 id="feat4Title">Cross-Platform</h3>
               <p id="feat4Desc">Play anywhere</p>
@@ -128,7 +124,12 @@
             <h3><i class="fas fa-keyboard"></i> CONTROLS</h3>
             <div class="controls-list">
               <div class="control-item">
-                <span class="key"><i class="fas fa-arrow-up"></i><i class="fas fa-arrow-left"><i class="fas fa-arrow-down"></i></i><i class="fas fa-arrow-right"></i></span>
+                <span class="key">
+                  <i class="fas fa-arrow-up"></i>
+                  <i class="fas fa-arrow-left"></i>
+                  <i class="fas fa-arrow-down"></i>
+                  <i class="fas fa-arrow-right"></i>
+                </span>
                 <span id="ctrlMove">Move Baduz</span>
               </div>
               <div class="control-item">
@@ -143,7 +144,6 @@
                 <span class="key">R</span>
                 <span id="ctrlReset">Reset Level</span>
               </div>
-              <!-- Save/Load removed -->
             </div>
           </div>
 
@@ -232,14 +232,14 @@
       <div class="game-container">
         <div class="canvas-wrapper">
           <div class="canvas-frame">
-            <canvas id="gameCanvas"></canvas></canvas>
+            <canvas id="gameCanvas"></canvas>
             <div class="frame-glow"></div>
             <div class="canvas-overlay">
               <div class="quick-actions">
-                <button id="btnQuickHint" class="quick-btn hint-btn" title="Quick Hint (H)">
+                <button id="btnQuickHint"   class="quick-btn hint-btn"   title="Quick Hint (H)">
                   <i class="fas fa-lightbulb"></i>
                 </button>
-                <button id="btnQuickPause" class="quick-btn pause-btn" title="Pause (P)">
+                <button id="btnQuickPause"  class="quick-btn pause-btn"  title="Pause (P)">
                   <i class="fas fa-pause"></i>
                 </button>
                 <button id="btnQuickCenter" class="quick-btn center-btn" title="Center View">
@@ -262,7 +262,6 @@
 
         <!-- Game Controls -->
         <div class="game-controls">
-          <!-- Mobile Controls -->
           <div class="mobile-controls-section">
             <div class="virtual-joystick" id="joystick">
               <div class="joystick-base">
@@ -272,11 +271,11 @@
             </div>
 
             <div class="mobile-buttons">
-              <button class="mobile-btn hint-mobile" id="btnMobileHint">
+              <button class="mobile-btn hint-mobile"   id="btnMobileHint">
                 <i class="fas fa-lightbulb"></i>
                 <span>Hint</span>
               </button>
-              <button class="mobile-btn pause-mobile" id="btnMobilePause">
+              <button class="mobile-btn pause-mobile"  id="btnMobilePause">
                 <i class="fas fa-pause"></i>
                 <span>Pause</span>
               </button>
@@ -284,7 +283,7 @@
                 <i class="fas fa-crosshairs"></i>
                 <span>Center</span>
               </button>
-              <button class="mobile-btn jump-mobile" id="btnMobileJump">
+              <button class="mobile-btn jump-mobile"   id="btnMobileJump">
                 <i class="fas fa-arrow-up"></i>
                 <span>Jump</span>
               </button>
@@ -292,8 +291,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Save/Load removed -->
     </main>
 
     <!-- Footer -->
@@ -320,9 +317,27 @@
     </footer>
   </div>
 
-  <!-- Scripts -->
+  <!-- =====================================================
+       SCRIPTS — ordine di caricamento importante:
+       1. Phaser (libreria esterna)
+       2. Costanti (usate da tutti i moduli)
+       3. Sistemi indipendenti (rng, scoring, player, pathfinding)
+       4. Joystick (sistema UI standalone)
+       5. Traduzioni (dati i18n)
+       6. MazeScene (scena Phaser, usa tutto quanto sopra)
+       7. main.js (inizializza Phaser)
+       8. ui.js (DOM events, usa traduzioni e joystick)
+  ===================================================== -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
-  <script src="demo.js"></script>
+  <script src="src/data/constants.js"></script>
+  <script src="src/systems/rng.js"></script>
+  <script src="src/systems/scoring.js"></script>
+  <script src="src/systems/player.js"></script>
+  <script src="src/systems/pathfinding.js"></script>
+  <script src="src/systems/joystick.js"></script>
+  <script src="src/i18n/translations.js"></script>
+  <script src="src/scenes/MazeScene.js"></script>
+  <script src="src/scenes/main.js"></script>
   <script src="ui.js"></script>
 </body>
 </html>
